@@ -1,0 +1,338 @@
+{
+  "name": "PropFinova Blog Automation - Ollama Draft Creator",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 7
+            }
+          ]
+        }
+      },
+      "id": "8d605b07-2bbf-4691-9b1e-9cc4759b0e1c",
+      "name": "Daily 7 AM Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -900,
+        -80
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "c3fd9f04-fdac-40b6-8be4-a6d8f12b6b64",
+      "name": "Manual Test Trigger",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const topics = [\n  {\n    keyword: 'flats in Sarjapur Road',\n    city: 'Bangalore',\n    location: 'Sarjapur Road',\n    propertyType: 'Apartment',\n    category: 'Buying Guide',\n    intent: 'buyer'\n  },\n  {\n    keyword: 'ready to move flats in Whitefield',\n    city: 'Bangalore',\n    location: 'Whitefield',\n    propertyType: 'Apartment',\n    category: 'Location Guide',\n    intent: 'buyer'\n  },\n  {\n    keyword: 'villa plots near Devanahalli',\n    city: 'Bangalore',\n    location: 'Devanahalli',\n    propertyType: 'Plot',\n    category: 'Investment',\n    intent: 'investor'\n  }\n];\n\n// Add up to 20 topics here, or replace this node with Google Sheets later.\nreturn topics.slice(0, 20).map((topic, index) => ({\n  json: {\n    id: index + 1,\n    ...topic,\n    brandName: 'PropFinova',\n    siteUrl: 'https://propfinova.com'\n  }\n}));"
+      },
+      "id": "ba1e9095-bf9f-42ac-8c3f-e04134b00397",
+      "name": "Topic Queue",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -620,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "15204966-9890-43f8-9726-a34492d6a1d5",
+      "name": "Split Topics",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -380,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:11434/api/chat",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  model: 'gemma4:31b-cloud',\n  stream: false,\n  format: 'json',\n  options: {\n    temperature: 0.7,\n    top_p: 0.9\n  },\n  messages: [\n    {\n      role: 'system',\n      content: 'You are an expert real estate SEO writer for PropFinova. Return only valid JSON. Do not use markdown fences. Write useful, locally specific, non-spammy content. Avoid fake price claims, fake legal claims, fake RERA claims, fake builder claims, and unsupported guarantees.'\n    },\n    {\n      role: 'user',\n      content: `Create a real estate blog for keyword: ${$json.keyword}. City: ${$json.city}. Location: ${$json.location}. Property type: ${$json.propertyType}. Category: ${$json.category}. Intent: ${$json.intent}. Return JSON with keys: title, excerpt, contentHtml, categories, tags, seo. seo must include metaTitle, metaDescription, keywords. Rules: metaTitle max 60 chars, metaDescription max 160 chars, excerpt max 300 chars, contentHtml must be HTML with h2/h3/p/ul/li tags, 1200-1800 words, include FAQs near the end, include a natural PropFinova CTA, no duplicate title pattern.`\n    }\n  ]\n} }}",
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "17f56d40-eb9b-4bf3-a62b-b4af0e259fb3",
+      "name": "Generate Blog with Ollama",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -120,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = $json.message?.content || $json.response || '';\nlet blog;\n\ntry {\n  blog = JSON.parse(raw);\n} catch (error) {\n  throw new Error(`Model returned invalid JSON: ${raw.slice(0, 800)}`);\n}\n\nfunction trimTo(value, max) {\n  return String(value || '').trim().slice(0, max);\n}\n\nfunction ensureArray(value) {\n  if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);\n  if (typeof value === 'string') return value.split(',').map(v => v.trim()).filter(Boolean);\n  return [];\n}\n\nconst content = String(blog.contentHtml || blog.content || '').trim();\nconst wordCount = content.replace(/<[^>]*>/g, ' ').split(/\\s+/).filter(Boolean).length;\n\nif (!blog.title || !content || !blog.excerpt) {\n  throw new Error('Blog output missing title, excerpt, or contentHtml.');\n}\n\nif (wordCount < 700) {\n  throw new Error(`Blog content too short: ${wordCount} words.`);\n}\n\nreturn [{\n  json: {\n    title: trimTo(blog.title, 120),\n    excerpt: trimTo(blog.excerpt, 300),\n    content,\n    featuredImage: null,\n    categories: ensureArray(blog.categories),\n    tags: ensureArray(blog.tags),\n    seo: {\n      metaTitle: trimTo(blog.seo?.metaTitle || blog.title, 60),\n      metaDescription: trimTo(blog.seo?.metaDescription || blog.excerpt, 160),\n      keywords: ensureArray(blog.seo?.keywords)\n    },\n    status: 'draft',\n    sourceKeyword: $('Split Topics').item.json.keyword,\n    sourceLocation: $('Split Topics').item.json.location,\n    wordCount\n  }\n}];"
+      },
+      "id": "0d3b5ff1-c0fd-4c26-a973-077f6283d581",
+      "name": "Parse and Validate Blog JSON",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        140,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/auth/login",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  email: '64rohanmalo@gmail.com',\n  password: 'mmmmmmmm'\n} }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "11093b87-e6ff-4ab6-bf5e-50f69e61f9a3",
+      "name": "Login to App",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        400,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "combine",
+        "combinationMode": "mergeByPosition",
+        "options": {}
+      },
+      "id": "f26d7601-e824-4dce-a730-97cf7177d9ca",
+      "name": "Merge Blog and Token",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 2.1,
+      "position": [
+        660,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:3000/api/blogs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "=Bearer {{$json.token}}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ {\n  title: $json.title,\n  content: $json.content,\n  excerpt: $json.excerpt,\n  featuredImage: $json.featuredImage,\n  categories: $json.categories,\n  tags: $json.tags,\n  seo: $json.seo,\n  status: 'draft'\n} }}",
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "44b0eda5-fabf-4be0-a167-6e76dfc24c6b",
+      "name": "Create Blog Draft",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        920,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    success: true,\n    message: 'Draft created. Review it in /admin/blogs before publishing.',\n    blogTitle: $json.data?.title,\n    blogSlug: $json.data?.slug,\n    blogStatus: $json.data?.status,\n    adminUrl: 'http://localhost:3000/admin/blogs'\n  }\n}];"
+      },
+      "id": "96364b02-7af5-447a-b2ee-420fc4fca582",
+      "name": "Result Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1180,
+        40
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## Before running\n\n1. Start this Next.js app on port 3000.\n2. Start Ollama and pull/sign in for `gemma4:31b-cloud`.\n3. Edit topics in the `Topic Queue` node.\n4. Run `Manual Test Trigger` first.\n5. Blogs are created as DRAFTS - review in /admin/blogs before publishing.\n\nInside Docker, n8n must call host services with `host.docker.internal`, not `localhost`.\nAdmin credentials are pre-configured in the Login node.",
+        "height": 300,
+        "width": 420
+      },
+      "id": "b707b705-d01e-4cef-a7af-bd016fb3ee34",
+      "name": "Setup Notes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -900,
+        -420
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Daily 7 AM Trigger": {
+      "main": [
+        [
+          {
+            "node": "Topic Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Test Trigger": {
+      "main": [
+        [
+          {
+            "node": "Topic Queue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Topic Queue": {
+      "main": [
+        [
+          {
+            "node": "Split Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Topics": {
+      "main": [
+        [
+          {
+            "node": "Generate Blog with Ollama",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Blog with Ollama": {
+      "main": [
+        [
+          {
+            "node": "Parse and Validate Blog JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse and Validate Blog JSON": {
+      "main": [
+        [
+          {
+            "node": "Login to App",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Merge Blog and Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Login to App": {
+      "main": [
+        [
+          {
+            "node": "Merge Blog and Token",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Merge Blog and Token": {
+      "main": [
+        [
+          {
+            "node": "Create Blog Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Blog Draft": {
+      "main": [
+        [
+          {
+            "node": "Result Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Result Summary": {
+      "main": [
+        [
+          {
+            "node": "Split Topics",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "8d0b5258-4877-44b1-9aae-381c85193e96",
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "id": "A4_REALTY_BLOG_AUTOMATION",
+  "tags": []
+}

@@ -1,0 +1,223 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+/* ============================================================================
+   DESIGN TOKENS — the single source of truth for the whole site's look.
+
+   Everything in the :root block below is admin-controlled: the <style> tag in
+   layout.js overwrites each one from the Theme document, so changing a colour
+   or a font is a Settings > Theme & Colours action, never a code change.
+
+   Defaults here are the "soft light green" theme. They are only the fallback
+   used before/if the database has no theme saved.
+   ============================================================================ */
+
+:root {
+  /* --- Brand ------------------------------------------------------------- */
+  --primary: #17855a;        /* actions, links, active state. AA on white. */
+  --secondary: #10251b;      /* ink: headings, dark panels, footer         */
+  --accent: #6fcf9a;         /* light-green highlights, badges, glows      */
+
+  /* --- Surfaces ---------------------------------------------------------- */
+  --background: #f3faf6;     /* page canvas — the light green tint         */
+  --surface: #ffffff;        /* cards, panels, inputs                      */
+  --border: #dceae2;         /* hairlines, dividers, input outlines        */
+
+  /* --- Text -------------------------------------------------------------- */
+  --foreground: #16241d;     /* body copy                                  */
+  --muted: #5c7268;          /* captions, labels, secondary copy           */
+
+  /* --- Controls ---------------------------------------------------------- */
+  --btn-text: #ffffff;       /* label colour on a --primary filled button  */
+
+  /* --- Type --------------------------------------------------------------
+     Named --font-body / --font-heading rather than --font-sans: the @theme
+     block below maps them onto Tailwind's font-sans/font-display keys, and
+     `--font-sans: var(--font-sans)` would be a self-reference that resolves
+     to nothing. */
+  --font-body: ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-body);
+
+  /* --- Derived shades ----------------------------------------------------
+     Never set by the admin. Each is a mix of a token above, so a single new
+     hex re-tints every hover, tint and gradient stop in the app. */
+  --primary-dark: color-mix(in srgb, var(--primary) 84%, black);
+  --primary-darker: color-mix(in srgb, var(--primary) 62%, black);
+  --primary-light: color-mix(in srgb, var(--primary) 34%, white);
+  --primary-soft: color-mix(in srgb, var(--primary) 10%, white);
+  --secondary-dark: color-mix(in srgb, var(--secondary) 78%, black);
+  --secondary-light: color-mix(in srgb, var(--secondary) 86%, white);
+  --accent-soft: color-mix(in srgb, var(--accent) 24%, white);
+
+  /* Brand-tinted elevation: shadows pick up the ink hue instead of pure
+     black, which is what keeps a light theme from looking grey and muddy. */
+  --shadow-tint: color-mix(in srgb, var(--secondary) 14%, transparent);
+  --shadow-tint-strong: color-mix(in srgb, var(--secondary) 22%, transparent);
+
+  /* Neutral ramp, tinted with the brand ink. Declared here rather than
+     straight inside @theme so Tailwind emits a plain `var(--tint-N)` in each
+     utility: putting color-mix() in @theme makes it wrap every single
+     utility (and every opacity variant) in an @supports block whose fallback
+     is raw --secondary — i.e. a near-black `bg-slate-50`. */
+  --tint-50: color-mix(in srgb, var(--secondary) 3%, white);
+  --tint-100: color-mix(in srgb, var(--secondary) 6%, white);
+  --tint-200: color-mix(in srgb, var(--secondary) 12%, white);
+  --tint-300: color-mix(in srgb, var(--secondary) 22%, white);
+  --tint-400: color-mix(in srgb, var(--secondary) 42%, white);
+  --tint-500: color-mix(in srgb, var(--secondary) 58%, white);
+  --tint-600: color-mix(in srgb, var(--secondary) 70%, white);
+  --tint-700: color-mix(in srgb, var(--secondary) 80%, white);
+  --tint-800: color-mix(in srgb, var(--secondary) 90%, white);
+  --tint-900: color-mix(in srgb, var(--secondary) 96%, white);
+  --tint-950: var(--secondary);
+}
+
+@theme inline {
+  /* Token -> utility. `bg-background`, `border-border`, `text-muted`, etc. */
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-btn-text: var(--btn-text);
+
+  --color-primary: var(--primary);
+  --color-primary-dark: var(--primary-dark);
+  --color-primary-darker: var(--primary-darker);
+  --color-primary-light: var(--primary-light);
+  --color-primary-soft: var(--primary-soft);
+  --color-secondary: var(--secondary);
+  --color-secondary-dark: var(--secondary-dark);
+  --color-secondary-light: var(--secondary-light);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-heading);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  /* ---------------------------------------------------------------------
+     Neutral ramp re-tint.
+
+     The app has ~2800 hardcoded `slate-*` / `gray-*` utilities (admin, CRM,
+     dashboards). Rather than rewrite them all, both ramps point at the
+     --tint-* scale above, which keeps slate's original lightness curve but
+     mixes in the brand ink. Tailwind v4 compiles utilities down to a
+     `var()` reference, so these resolve at runtime: a new --secondary hex
+     retints every one of those utilities live, opacity modifiers included.
+     --------------------------------------------------------------------- */
+  --color-slate-50: var(--tint-50);
+  --color-slate-100: var(--tint-100);
+  --color-slate-200: var(--tint-200);
+  --color-slate-300: var(--tint-300);
+  --color-slate-400: var(--tint-400);
+  --color-slate-500: var(--tint-500);
+  --color-slate-600: var(--tint-600);
+  --color-slate-700: var(--tint-700);
+  --color-slate-800: var(--tint-800);
+  --color-slate-900: var(--tint-900);
+  --color-slate-950: var(--tint-950);
+
+  --color-gray-50: var(--tint-50);
+  --color-gray-100: var(--tint-100);
+  --color-gray-200: var(--tint-200);
+  --color-gray-300: var(--tint-300);
+  --color-gray-400: var(--tint-400);
+  --color-gray-500: var(--tint-500);
+  --color-gray-600: var(--tint-600);
+  --color-gray-700: var(--tint-700);
+  --color-gray-800: var(--tint-800);
+  --color-gray-900: var(--tint-900);
+  --color-gray-950: var(--tint-950);
+
+  /* Elevation ramp, brand-tinted and flatter than Tailwind's default —
+     a light theme reads cleaner with wide, low-opacity shadows. */
+  --shadow-2xs: 0 1px 2px var(--shadow-tint);
+  --shadow-xs: 0 1px 3px var(--shadow-tint);
+  --shadow-sm: 0 2px 6px -1px var(--shadow-tint);
+  --shadow-md: 0 6px 16px -4px var(--shadow-tint);
+  --shadow-lg: 0 12px 28px -10px var(--shadow-tint-strong);
+  --shadow-xl: 0 20px 44px -16px var(--shadow-tint-strong);
+  --shadow-2xl: 0 32px 64px -24px var(--shadow-tint-strong);
+}
+
+/* No dark-mode override: this is a light design, and flipping --foreground
+   made every element that inherits body colour unreadable on white. */
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Headings keep the body font unless a surface opts into the display face
+   with `font-display` — forcing it globally would put a serif on the admin
+   dashboard, where the headings are meant to read as UI, not editorial. */
+
+::selection {
+  background: color-mix(in srgb, var(--primary) 22%, transparent);
+  color: var(--secondary);
+}
+
+/* One visible focus ring for the whole app. Keyboard users get it, mouse
+   users don't — the many `outline-none` inputs were leaving nothing behind. */
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+/* Brand-tinted scrollbar so long admin tables don't show a grey gutter. */
+* {
+  scrollbar-color: color-mix(in srgb, var(--secondary) 22%, transparent) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--secondary) 18%, transparent);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--secondary) 32%, transparent);
+  background-clip: content-box;
+}
+
+/* Long-form blog content inherits the brand instead of prose's own greys. */
+.prose {
+  --tw-prose-body: var(--foreground);
+  --tw-prose-headings: var(--secondary);
+  --tw-prose-lead: var(--muted);
+  --tw-prose-links: var(--primary);
+  --tw-prose-bold: var(--secondary);
+  --tw-prose-counters: var(--muted);
+  --tw-prose-bullets: var(--primary-light);
+  --tw-prose-hr: var(--border);
+  --tw-prose-quotes: var(--secondary);
+  --tw-prose-quote-borders: var(--primary);
+  --tw-prose-captions: var(--muted);
+  --tw-prose-th-borders: var(--border);
+  --tw-prose-td-borders: var(--border);
+}

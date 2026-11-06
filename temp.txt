@@ -1,0 +1,21 @@
+this is a earlier realestate project and i want to complitly modify change for another client, so first
+  1. complietly remove all the name of propfinova and replace with PropFinova.
+  2. remove all the propfinova logo and replace with this '/Users/rohanmalo/Desktop/propfinova-realestate/propfinovalogo.jpeg', this is the main logo put
+  everyware from website to browser tab all the places,
+  3. change teh color theme to red from little dark green green
+  4. remove this modules form admin property search, ai advisor, geospatial map, and in system settings if you find any placeholder remove that also
+  and also remvoe anyting related to property sheet.
+  5. for CRM home leads individual page rearrange the UI remvoe the exact location, nearby locatoin, custoem search and same for the agent crm also.
+  so did you understand the requerment, i want to compliety rebrand this app and give to another realestate client. ask me if you have any dought
+
+
+  npx claude-code-templates@latest --skill creative-design/frontend-design
+
+  now i want you to compliety re-design the home page so the new client don't understand that i have used that antoher proejct (i show a4reatly as demo project to that client),
+
+
+
+
+light green: #D7F5DC
+goldern: #C9A227
+second black: #0B0F19
