@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { revalidatePath, revalidateTag } from 'next/cache';
 import connectToDatabase from '@/lib/mongodb';
 import Theme from '@/models/Theme';
 import {
@@ -102,6 +103,15 @@ export async function PUT(request) {
       { $set: update },
       { new: true, upsert: true, runValidators: true }
     ).lean();
+
+    // Most pages are statically prerendered, so the saved theme is invisible
+    // until their cached HTML is thrown away. revalidateTag matches the tag
+    // on getTheme() in src/app/layout.js; revalidatePath is the belt-and-
+    // braces for any route that renders the layout without hitting that
+    // cache entry. Without these two lines the save succeeds in Mongo and
+    // the site keeps serving the old colours until the next deploy.
+    revalidateTag('theme');
+    revalidatePath('/', 'layout');
 
     return NextResponse.json({
       success: true,

@@ -12,6 +12,7 @@ import {
   Lora,
 } from "next/font/google";
 import Script from "next/script";
+import { unstable_cache } from "next/cache";
 import "./globals.css";
 import Navber from "./components/Navber";
 // import ChatBot from "./components/ChatBot";
@@ -24,15 +25,25 @@ import { DEFAULT_THEME, normalizeTheme, themeToCssVars } from "@/lib/themeTokens
 // Admin-set theme. Every colour and font in the app resolves through the
 // custom properties written into the <style> tag below, so saving in
 // Settings > Theme & Colours restyles the whole site with no code change.
-async function getTheme() {
-  try {
-    await connectToDatabase();
-    const theme = await Theme.findOne({}).lean();
-    return normalizeTheme(theme);
-  } catch {
-    return DEFAULT_THEME;
-  }
-}
+// Wrapped in unstable_cache with a tag, and that tag is the whole point:
+// most pages here are statically prerendered, so without it the theme read at
+// build time gets frozen into the HTML and saving in Settings has no visible
+// effect until the next deploy. The tag makes every page that renders this
+// layout depend on 'theme', so revalidateTag('theme') in the PUT handler
+// (src/app/api/theme/route.js) regenerates them on the next request.
+const getTheme = unstable_cache(
+  async () => {
+    try {
+      await connectToDatabase();
+      const theme = await Theme.findOne({}).lean();
+      return normalizeTheme(theme);
+    } catch {
+      return DEFAULT_THEME;
+    }
+  },
+  ['site-theme'],
+  { tags: ['theme'] }
+);
 
 /* The curated font set offered in Settings. Each entry only declares its
    @font-face + CSS variable; `preload: false` keeps Next from emitting a
