@@ -7,7 +7,6 @@ import {
   LayoutDashboard,
   Building2,
   Search,
-  Sparkles,
   Users,
   Newspaper,
   BarChart3,
@@ -85,13 +84,6 @@ export default function AdminLayout({ children }) {
       name: 'Property Sheet',
       href: '/admin/property-sheet',
       icon: FileSpreadsheet,
-    },
-    {
-      name: 'AI Advisor',
-      href: '/ai-assistant',
-      badge: 'Beta',
-      badgeColor: 'bg-violet-500/20 text-violet-300 border border-violet-500/30',
-      icon: Sparkles,
     },
     {
       name: 'Editorial & Blogs',
