@@ -34,6 +34,10 @@ const UserSchema = new mongoose.Schema({
     type: Boolean,
     default: true,
   },
+  wishlist: {
+    type: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Property' }],
+    default: [],
+  },
   // Agent statistics
   assignedLeadsCount: {
     type: Number,
