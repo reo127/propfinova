@@ -45,9 +45,7 @@ export default function TabBar({ state, descriptors, emitter, navigateToTab, ins
     () => ({
       width: tabWidth,
       transform: [{ translateX: withSpring(tabWidth * activeIndex, SPRING) }],
-    }),
-    [tabWidth, activeIndex]
-  );
+    }));
 
   return (
     <View
@@ -132,21 +130,18 @@ export default function TabBar({ state, descriptors, emitter, navigateToTab, ins
 function TabItem({ focused, label, icon, accessibilityLabel, onPress, onLongPress }) {
   // Animation modifiers must be produced inside the worklet, so each style
   // returns `withSpring`/`withTiming` directly rather than reading a value
-  // computed during render.
+  // computed during render. No dependency array: Reanimated ignores it on
+  // native and warns, and the worklet captures `focused` from the closure.
   const iconStyle = useAnimatedStyle(
     () => ({
       transform: [
         { scale: withSpring(focused ? 1.1 : 1, SPRING) },
         { translateY: withSpring(focused ? -1 : 0, SPRING) },
       ],
-    }),
-    [focused]
-  );
+    }));
 
   const labelStyle = useAnimatedStyle(
-    () => ({ opacity: withTiming(focused ? 1 : 0.55, { duration: 220 }) }),
-    [focused]
-  );
+    () => ({ opacity: withTiming(focused ? 1 : 0.55, { duration: 220 }) }));
 
   return (
     <Pressable
