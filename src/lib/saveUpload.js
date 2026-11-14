@@ -12,7 +12,15 @@ import {
 // Where the bytes land. Default keeps everything inside the app so dev works
 // with no setup; on the VPS set UPLOAD_DIR to a folder outside the repo (or
 // symlink public/uploads to one) so a redeploy cannot wipe customer uploads.
-const UPLOAD_DIR = process.env.UPLOAD_DIR || path.join(process.cwd(), 'public', 'uploads');
+//
+// The path is assembled from runtime values on purpose. Written literally as
+// `path.join(process.cwd(), 'public', 'uploads')`, Turbopack folds it into a
+// directory asset reference and walks the whole folder during `next build`.
+// Where public/uploads is a symlink to storage outside the repo, that walk
+// aborts the build with "Symlink ... points out of the filesystem root".
+const UPLOAD_SEGMENTS = ['public', 'uploads'];
+const UPLOAD_DIR =
+  process.env.UPLOAD_DIR || path.resolve(process.cwd(), UPLOAD_SEGMENTS.join(path.sep));
 
 // Public URL prefix. Files are always served from /uploads/... regardless of
 // where UPLOAD_DIR points.
