@@ -37,8 +37,8 @@
     "start": "expo start",
     "start:local": "expo start -c",
     "start:prod": "EXPO_PUBLIC_API_URL=http://189.72.149.174 expo start -c",
-    "android": "expo run:android",
-    "ios": "expo run:ios",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
     "web": "expo start --web"
   },
   "private": true,
