@@ -46,4 +46,3 @@ next-env.d.ts
 # user uploads (served from disk, never committed)
 /public/uploads/*
 !/public/uploads/.gitkeep
-mobile
