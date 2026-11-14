@@ -5,7 +5,6 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import {
   Phone,
-  MessageCircle,
   Mail,
   MapPin,
   Calendar,
@@ -25,8 +24,112 @@ import {
   AlertCircle
 } from 'lucide-react';
 import AssignmentHistory from '@/components/AssignmentHistory';
+import LeadPropertyPanel from '@/app/components/LeadPropertyPanel';
 import { getLocationDisplayName } from '@/utils/locations';
 import { useCRMStore, useDashboardStore, useAgentStore } from '@/stores';
+
+/** "2 days ago" — lets a caller judge staleness without parsing a date. */
+function relativeTime(dateString) {
+  if (!dateString) return '';
+  const then = new Date(dateString).getTime();
+  if (Number.isNaN(then)) return '';
+
+  const seconds = Math.round((Date.now() - then) / 1000);
+  if (seconds < 60) return 'just now';
+  const mins = Math.round(seconds / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.round(hours / 24);
+  if (days < 31) return `${days}d ago`;
+  const months = Math.round(days / 30);
+  if (months < 12) return `${months}mo ago`;
+  return `${Math.round(months / 12)}y ago`;
+}
+
+const stamp = (d) =>
+  d
+    ? new Date(d).toLocaleDateString('en-IN', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      })
+    : '';
+
+/**
+ * Merges notes, follow-ups and site visits into ONE list sorted newest-first.
+ *
+ * The previous version grouped by record type and labelled the result
+ * "Chronological", which it was not — a note from today appeared below a
+ * follow-up from last month. A caller reconstructing the story needs true
+ * recency order.
+ */
+function buildTimeline(lead) {
+  if (!lead) return [];
+  const items = [];
+
+  (lead.notes || []).forEach((note) =>
+    items.push({
+      kind: 'note',
+      at: note.addedAt,
+      title: 'Note logged',
+      body: note.content,
+      by: note.addedBy,
+    })
+  );
+
+  (lead.followUpHistory || []).forEach((f) =>
+    items.push({
+      kind: 'followup',
+      at: f.addedAt || f.scheduledDate,
+      title: f.completed ? 'Follow-up completed' : 'Follow-up scheduled',
+      body: f.notes,
+      when: f.scheduledDate,
+    })
+  );
+
+  (lead.visitHistory || []).forEach((v) =>
+    items.push({
+      kind: 'visit',
+      at: v.addedAt || v.scheduledDate,
+      title:
+        v.type === 'completed'
+          ? 'Site visit completed'
+          : v.type === 'rescheduled'
+          ? 'Site visit rescheduled'
+          : v.type === 'cancelled'
+          ? 'Site visit cancelled'
+          : 'Site visit scheduled',
+      body: v.rescheduleReason ? `Rescheduled: ${v.rescheduleReason}` : v.reason,
+      when: v.scheduledDate,
+    })
+  );
+
+  return items
+    .filter((i) => i.at)
+    .sort((a, b) => new Date(b.at) - new Date(a.at));
+}
+
+/** One label/value row in the reference rail. */
+function DetailRow({ icon: Icon, label, children }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-slate-100 py-2.5 last:border-0">
+      <dt className="flex shrink-0 items-center gap-2 text-slate-500">
+        <Icon className="h-3.5 w-3.5 text-slate-400" />
+        {label}
+      </dt>
+      <dd className="min-w-0 text-right">{children}</dd>
+    </div>
+  );
+}
+
+const TIMELINE_STYLES = {
+  note: { dot: 'bg-primary', chip: 'bg-primary/10 text-primary', label: 'Note' },
+  followup: { dot: 'bg-cyan-500', chip: 'bg-cyan-50 text-cyan-700', label: 'Follow-up' },
+  visit: { dot: 'bg-violet-500', chip: 'bg-violet-50 text-violet-700', label: 'Site visit' },
+};
 
 export default function LeadDetailPage() {
   const params = useParams();
@@ -439,6 +542,16 @@ export default function LeadDetailPage() {
     return null;
   };
 
+  const timeline = buildTimeline(lead);
+  const openUpdateModal = () => {
+    setUpdateStatus('');
+    setUpdateSubstatus('');
+    setUpdateNote('');
+    setSiteVisitDate('');
+    setUpdateError('');
+    setShowUpdateModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 relative">
       {/* Leads Navigation Sidebar */}
@@ -568,7 +681,7 @@ export default function LeadDetailPage() {
 
       {/* Sticky Header */}
       <div className="bg-surface/95 backdrop-blur-md border-b border-slate-200/80 sticky top-0 md:top-16 z-30 shadow-2xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+        <div className="max-w-[1600px] mx-auto px-4 sm:px-6 py-3.5">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
               {/* Back to CRM */}
@@ -607,14 +720,19 @@ export default function LeadDetailPage() {
                     #{lead._id.slice(-6).toUpperCase()}
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-0.5 truncate">
-                  Client Dossier • Position {getCurrentLeadActualPosition()} of {totalLeadsCount} active leads
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${getStatusColor(lead.status || 'new')}`}>
+                    {formatStatusText(lead.status || 'new')}
+                  </span>
+                  <span className="text-xs font-mono font-semibold tabular-nums text-slate-600">
+                    {lead.phone}
+                  </span>
+                </div>
               </div>
             </div>
             
+            <div className="flex items-center gap-2">
             {/* Quick Next/Prev Navigation */}
-            <div className="flex items-center space-x-2">
               {allLeads.length > 0 ? (
                 <>
                   <button
@@ -658,378 +776,222 @@ export default function LeadDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-3xl mx-auto p-6">
-        <div className="grid grid-cols-1 gap-6">
-          {/* Client Dossier */}
-          <div>
-            <div className="bg-surface rounded-3xl border border-slate-200/80 shadow-sm p-6 space-y-6">
-              {/* Client Profile Header */}
-              <div className="text-center pb-6 border-b border-slate-100">
-                <div className="relative inline-block mb-3">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/15 via-primary/5 to-slate-100 border-2 border-primary/25 flex items-center justify-center mx-auto shadow-inner">
-                    <span className="text-primary font-black text-2xl tracking-tight">
-                      {lead.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </span>
-                  </div>
-                  <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-white text-[10px]">
-                    ✓
-                  </span>
-                </div>
+      <div className="mx-auto max-w-[1600px] px-4 py-6 sm:px-6">
+        {/* Two columns on desktop: the work surface on the left, reference
+            material in a sticky rail on the right. The old layout stacked
+            everything into one 768px column, so a caller had to scroll past
+            the whole profile to reach inventory or history. */}
+        <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-[1fr_370px]">
 
-                <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">{lead.name}</h2>
-                <p className="text-xs font-mono text-slate-400 mt-0.5">
-                  LEAD REF #{lead._id.slice(-8).toUpperCase()}
-                </p>
+          {/* ================= WORK SURFACE ================= */}
+          <div className="min-w-0 space-y-6">
 
-                <div className="mt-2.5">
-                  {lead.assignedTo ? (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200/70">
-                      <UserCheck className="w-3.5 h-3.5" />
-                      <span>Assigned to {lead.assignedTo.name}</span>
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-200/80 animate-pulse">
-                      <span>Unassigned Prospect</span>
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Direct Communication Bar */}
-              <div className="grid grid-cols-2 gap-2">
-                <a
-                  href={`tel:${lead.phone}`}
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-slate-900 hover:bg-black text-white text-xs font-bold shadow-sm transition-colors"
-                >
-                  <Phone className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Call Now</span>
-                </a>
-                <a
-                  href={`https://wa.me/91${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${lead.name}, I am reaching out from PropFinova regarding your property interest in ${getLocationDisplayName(lead.interestedLocation)}.`)}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition-colors"
-                >
-                  <MessageCircle className="w-3.5 h-3.5" />
-                  <span>WhatsApp</span>
-                </a>
-              </div>
-
-              {/* Client Profile Details */}
-              <div className="space-y-2.5 text-xs">
-                {/* Phone */}
-                <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2.5 text-slate-500">
-                    <Phone className="w-4 h-4 text-slate-400" />
-                    <span>Mobile Phone</span>
-                  </div>
-                  <a href={`tel:${lead.phone}`} className="font-bold text-slate-900 hover:text-primary font-mono tabular-nums">
-                    {lead.phone}
-                  </a>
-                </div>
-
-                {/* Email */}
-                {lead.email && (
-                  <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                    <div className="flex items-center gap-2.5 text-slate-500">
-                      <Mail className="w-4 h-4 text-slate-400" />
-                      <span>Email</span>
+            {/* Commitments surface above everything — these are the things a
+                caller must not miss, and they used to be buried in the
+                timeline. */}
+            {(lead.followUpDate || lead.siteVisitDate) && (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {lead.followUpDate && (
+                  <div className="flex items-start gap-3 rounded-2xl border border-cyan-200 bg-cyan-50/70 p-4">
+                    <Clock className="mt-0.5 h-4 w-4 shrink-0 text-cyan-600" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-cyan-700">Next follow-up</p>
+                      <p className="mt-0.5 text-sm font-bold text-cyan-900">{stamp(lead.followUpDate)}</p>
+                      <p className="text-[11px] text-cyan-700">{relativeTime(lead.followUpDate)}</p>
                     </div>
-                    <a href={`mailto:${lead.email}`} className="font-semibold text-slate-800 hover:text-primary truncate max-w-[180px]">
-                      {lead.email}
-                    </a>
                   </div>
                 )}
-
-                {/* Target Location */}
-                <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2.5 text-slate-500">
-                    <MapPin className="w-4 h-4 text-slate-400" />
-                    <span>Location</span>
-                  </div>
-                  <span className="font-bold text-slate-900">
-                    {getLocationDisplayName(lead.interestedLocation)}
-                  </span>
-                </div>
-
-                {/* Date Added */}
-                <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2.5 text-slate-500">
-                    <Calendar className="w-4 h-4 text-slate-400" />
-                    <span>Inquiry Date</span>
-                  </div>
-                  <span className="font-medium text-slate-700 tabular-nums">
-                    {formatDate(lead.createdAt).split(',')[0]}
-                  </span>
-                </div>
-
-                {/* Acquisition Source */}
-                <div className="flex items-center justify-between p-3 bg-slate-50/80 rounded-xl border border-slate-100">
-                  <div className="flex items-center gap-2.5 text-slate-500">
-                    <Sparkles className="w-4 h-4 text-slate-400" />
-                    <span>Source</span>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wider bg-slate-200 text-slate-700">
-                    {lead.source || 'Website'}
-                  </span>
-                </div>
-
-                {/* Current Stage Status Box */}
-                <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
-                      Current Stage
-                    </span>
-                    <div className="flex flex-col gap-1">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold ${getStatusColor(lead.status || 'new')}`}>
-                        {formatStatusText(lead.status || 'new')}
-                      </span>
-                      {lead.substatus && (
-                        <span className="text-[11px] text-slate-600 font-medium">
-                          {formatSubstatusText(lead.substatus)}
-                        </span>
-                      )}
-                      {lead.siteVisitDate && (
-                        <span className="text-[11px] font-bold text-violet-700 bg-violet-100/70 px-2 py-0.5 rounded-md">
-                          Visit: {new Date(lead.siteVisitDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
-                      {lead.followUpDate && (
-                        <span className="text-[11px] font-bold text-cyan-700 bg-cyan-100/70 px-2 py-0.5 rounded-md">
-                          Follow-up: {new Date(lead.followUpDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      )}
+                {lead.siteVisitDate && (
+                  <div className="flex items-start gap-3 rounded-2xl border border-violet-200 bg-violet-50/70 p-4">
+                    <CalendarCheck className="mt-0.5 h-4 w-4 shrink-0 text-violet-600" />
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-violet-700">Site visit</p>
+                      <p className="mt-0.5 text-sm font-bold text-violet-900">{stamp(lead.siteVisitDate)}</p>
+                      <p className="text-[11px] text-violet-700">{relativeTime(lead.siteVisitDate)}</p>
                     </div>
                   </div>
-
-                  <button
-                    onClick={() => {
-                      setUpdateStatus('');
-                      setUpdateSubstatus('');
-                      setUpdateNote('');
-                      setSiteVisitDate('');
-                      setUpdateError('');
-                      setShowUpdateModal(true);
-                    }}
-                    className="p-2 rounded-xl bg-surface hover:bg-slate-100 text-slate-700 border border-slate-200 shadow-2xs transition-colors"
-                    title="Update Stage or Add Note"
-                  >
-                    <Edit3 className="w-4 h-4 text-primary" />
-                  </button>
-                </div>
+                )}
               </div>
+            )}
 
-              {/* Primary Action Button */}
-              <button
-                onClick={() => {
-                  setUpdateStatus('');
-                  setUpdateSubstatus('');
-                  setUpdateNote('');
-                  setSiteVisitDate('');
-                  setUpdateError('');
-                  setShowUpdateModal(true);
-                }}
-                className="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-primary to-primary-dark hover:from-primary hover:to-primary-darker text-btn-text text-xs font-bold shadow-md shadow-primary/25 transition-all hover:scale-[1.01] flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <Edit3 className="w-4 h-4" />
-                <span>Update Status &amp; Add Note</span>
-              </button>
+            {/* On-call inventory: nearby areas + free-form search */}
+            <LeadPropertyPanel lead={lead} onLeadUpdated={setLead} />
 
-              {/* Activity Section (Follow-ups, Site Visits, Notes) */}
-              <div className="pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                    Activity &amp; Engagement
-                  </h4>
-                  <span className="text-[10px] text-slate-400">Chronological</span>
-                </div>
-
-                <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
-                  {/* Current Follow-up */}
-                  {lead.followUpDate && (
-                    <div className="border-l-2 border-cyan-500 pl-3 py-2 bg-cyan-50/60 rounded-r-xl">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-cyan-800 mb-0.5">
-                        <Clock className="w-3.5 h-3.5 text-cyan-600" />
-                        <span>Next Scheduled Follow-up</span>
-                      </div>
-                      <div className="text-xs text-cyan-900 font-medium">
-                        {new Date(lead.followUpDate).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Follow-up History */}
-                  {lead.followUpHistory && lead.followUpHistory.length > 0 && (
-                    <div className="border-l-2 border-slate-300 pl-3 py-2 bg-slate-50 rounded-r-xl">
-                      <div className="text-xs font-bold text-slate-700 mb-2">Follow-up History ({lead.followUpHistory.length})</div>
-                      <div className="space-y-2">
-                        {lead.followUpHistory.slice().reverse().map((followUp, index) => (
-                          <div key={index} className="text-xs p-2.5 bg-surface border border-slate-200/80 rounded-lg shadow-2xs">
-                            <div className="font-semibold text-slate-800">
-                              {new Date(followUp.scheduledDate).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                            {followUp.notes && (
-                              <div className="text-slate-600 mt-1">{followUp.notes}</div>
-                            )}
-                            <div className="text-[10px] text-slate-400 mt-1 font-medium">
-                              {followUp.completed ? '✓ Completed' : 'Scheduled'} • {formatDate(followUp.addedAt)}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Current Site Visit */}
-                  {lead.siteVisitDate && (
-                    <div className="border-l-2 border-violet-500 pl-3 py-2 bg-violet-50/60 rounded-r-xl">
-                      <div className="flex items-center gap-1.5 text-xs font-bold text-violet-800 mb-0.5">
-                        <CalendarCheck className="w-3.5 h-3.5 text-violet-600" />
-                        <span>Next Site Tour</span>
-                      </div>
-                      <div className="text-xs text-violet-900 font-medium">
-                        {new Date(lead.siteVisitDate).toLocaleDateString('en-IN', {
-                          day: '2-digit',
-                          month: 'long',
-                          year: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Visit History */}
-                  {lead.visitHistory && lead.visitHistory.length > 0 && (
-                    <div className="border-l-2 border-slate-300 pl-3 py-2 bg-slate-50 rounded-r-xl">
-                      <div className="text-xs font-bold text-slate-700 mb-2">Site Tour History ({lead.visitHistory.length})</div>
-                      <div className="space-y-2">
-                        {lead.visitHistory.slice().reverse().map((visit, index) => (
-                          <div key={index} className="text-xs p-2.5 bg-surface border border-slate-200/80 rounded-lg shadow-2xs">
-                            <div className="font-semibold text-slate-800">
-                              {new Date(visit.scheduledDate).toLocaleDateString('en-IN', {
-                                day: '2-digit',
-                                month: 'short',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </div>
-                            {visit.reason && (
-                              <div className="text-slate-600 mt-1">{visit.reason}</div>
-                            )}
-                            {visit.rescheduleReason && (
-                              <div className="text-amber-600 mt-1">Rescheduled: {visit.rescheduleReason}</div>
-                            )}
-                            <div className="text-[10px] text-slate-400 mt-1 font-medium">
-                              {visit.type === 'completed' ? '✓ Completed' : visit.type === 'rescheduled' ? '↻ Rescheduled' : visit.type === 'cancelled' ? '✗ Cancelled' : 'Scheduled'}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Notes */}
-                  {lead.notes && lead.notes.length > 0 ? (
-                    <div className="space-y-2 pt-1">
-                      <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        Conversation Notes ({lead.notes.length})
-                      </div>
-                      {lead.notes.slice().reverse().map((note, index) => (
-                        <div key={index} className="border-l-2 border-primary/40 pl-3 py-2 bg-slate-50 rounded-r-xl">
-                          <p className="text-xs text-slate-800 font-medium leading-relaxed">{note.content}</p>
-                          <p className="text-[10px] text-slate-400 mt-1">
-                            {formatDate(note.addedAt)} • {note.addedBy}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  ) : !lead.followUpDate && !lead.siteVisitDate ? (
-                    <div className="text-center py-6 text-slate-400">
-                      <FileText className="w-8 h-8 mx-auto mb-1.5 text-slate-300" />
-                      <p className="text-xs font-semibold text-slate-600">No activity logged yet</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">Log notes or schedule tours above</p>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-
-              {/* Assignment History */}
-              {lead.assignmentHistory && lead.assignmentHistory.length > 0 && (
-                <div className="pt-4 border-t border-slate-100">
-                  <AssignmentHistory history={lead.assignmentHistory} />
-                </div>
-              )}
-              
-              {/* Navigation Helper */}
-              <div className="mt-5 pt-4 border-t border-slate-100">
-                <div className="flex items-center justify-between mb-2.5">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Queue Navigation</span>
-                  <span className="text-xs font-semibold text-slate-500">
-                    Lead {getCurrentLeadActualPosition()} of {totalLeadsCount}
-                  </span>
+            {/* Activity — one true chronological stream, no inner scrollbar */}
+            <section className="overflow-hidden rounded-3xl border border-slate-200/80 bg-surface shadow-xs">
+              <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-4 sm:px-6">
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900">Activity</h3>
+                  <p className="text-xs text-slate-500">
+                    {timeline.length} {timeline.length === 1 ? 'entry' : 'entries'} · newest first
+                  </p>
                 </div>
                 <button
-                  onClick={() => setSidebarOpen(true)}
-                  className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all shadow-xs text-xs font-semibold group cursor-pointer"
+                  type="button"
+                  onClick={openUpdateModal}
+                  className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-surface px-3 py-2 text-xs font-bold text-slate-700 transition-colors hover:border-primary hover:text-primary cursor-pointer"
                 >
-                  <Layers className="w-4 h-4 text-slate-400 group-hover:text-white transition-colors" />
-                  <span>Browse Page Lead Queue ({allLeads.length})</span>
+                  <Edit3 className="h-3.5 w-3.5" />
+                  Add note
                 </button>
-                <div className="grid grid-cols-2 gap-2 mt-2">
-                  <button
-                    onClick={() => {
-                      const prev = getPreviousLead();
-                      if (prev) navigateToLead(prev._id);
-                    }}
-                    disabled={!getPreviousLead()}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    <ChevronLeft className="w-3.5 h-3.5" />
-                    <span>Previous</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const next = getNextLead();
-                      if (next) navigateToLead(next._id);
-                    }}
-                    disabled={!getNextLead()}
-                    className="flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold bg-slate-100 text-slate-700 rounded-xl hover:bg-slate-200 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
-                  >
-                    <span>Next</span>
-                    <ChevronRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                {(getPreviousLead() || getNextLead()) && (
-                  <div className="mt-2.5 space-y-1 text-[11px] text-slate-500 bg-slate-50 p-2.5 rounded-xl border border-slate-200/60">
-                    {getPreviousLead() && (
-                      <div className="truncate flex items-center gap-1">
-                        <span className="text-slate-400">Prev:</span>
-                        <span className="font-medium text-slate-700 truncate">{getPreviousLead().name}</span>
-                      </div>
-                    )}
-                    {getNextLead() && (
-                      <div className="truncate flex items-center gap-1">
-                        <span className="text-slate-400">Next:</span>
-                        <span className="font-medium text-slate-700 truncate">{getNextLead().name}</span>
-                      </div>
-                    )}
+              </div>
+
+              <div className="px-5 py-5 sm:px-6">
+                {timeline.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 py-10 text-center">
+                    <FileText className="mx-auto mb-2 h-8 w-8 text-slate-300" />
+                    <p className="text-sm font-semibold text-slate-600">No activity logged yet</p>
+                    <p className="mt-0.5 text-xs text-slate-400">
+                      Log a call note or schedule a follow-up to start the history.
+                    </p>
                   </div>
+                ) : (
+                  <ol className="relative space-y-5 border-l border-slate-200 pl-6">
+                    {timeline.map((item, index) => {
+                      const style = TIMELINE_STYLES[item.kind] || TIMELINE_STYLES.note;
+                      return (
+                        <li key={`${item.kind}-${index}`} className="relative">
+                          <span
+                            className={`absolute -left-[1.655rem] top-1.5 h-2.5 w-2.5 rounded-full ring-4 ring-surface ${style.dot}`}
+                          />
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${style.chip}`}>
+                              {style.label}
+                            </span>
+                            <span className="text-sm font-bold text-slate-900">{item.title}</span>
+                            <span className="text-[11px] text-slate-400">{relativeTime(item.at)}</span>
+                          </div>
+
+                          {item.when && (
+                            <p className="mt-1 text-xs font-semibold text-slate-600">For {stamp(item.when)}</p>
+                          )}
+                          {item.body && (
+                            <p className="mt-1.5 whitespace-pre-line text-sm leading-relaxed text-slate-700">
+                              {item.body}
+                            </p>
+                          )}
+                          <p className="mt-1 text-[11px] text-slate-400">
+                            {formatDate(item.at)}
+                            {item.by ? ` · ${item.by}` : ''}
+                          </p>
+                        </li>
+                      );
+                    })}
+                  </ol>
                 )}
               </div>
-            </div>
+            </section>
           </div>
+
+          {/* ================= REFERENCE RAIL ================= */}
+          <aside className="space-y-4 xl:sticky xl:top-32">
+
+            {/* Stage + the single primary action (previously duplicated as a
+                pencil icon and a full-width button doing the same thing) */}
+            <section className="rounded-3xl border border-slate-200/80 bg-surface p-5 shadow-xs">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Current stage</p>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-bold ${getStatusColor(lead.status || 'new')}`}>
+                  {formatStatusText(lead.status || 'new')}
+                </span>
+                {lead.substatus && (
+                  <span className="text-xs font-semibold text-slate-600">{formatSubstatusText(lead.substatus)}</span>
+                )}
+              </div>
+
+              <button
+                type="button"
+                onClick={openUpdateModal}
+                className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-primary px-4 py-3 text-xs font-bold text-btn-text shadow-md shadow-primary/25 transition-colors hover:bg-primary-dark"
+              >
+                <Edit3 className="h-4 w-4" />
+                Update status &amp; add note
+              </button>
+
+              <div className="mt-4 border-t border-slate-100 pt-3">
+                {lead.assignedTo ? (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700">
+                    <UserCheck className="h-3.5 w-3.5" />
+                    Assigned to {lead.assignedTo.name}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-amber-700">
+                    <AlertCircle className="h-3.5 w-3.5" />
+                    Unassigned
+                  </span>
+                )}
+              </div>
+            </section>
+
+            {/* Contact + context. Phone is shown as selectable text — agents
+                dial from their own phone/softphone, not from the CRM. */}
+            <section className="rounded-3xl border border-slate-200/80 bg-surface p-5 shadow-xs">
+              <div className="mb-4 flex items-center gap-3">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
+                  <span className="text-sm font-black tracking-tight text-primary">
+                    {lead.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)}
+                  </span>
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-bold text-slate-900">{lead.name}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                    #{lead._id.slice(-8).toUpperCase()}
+                  </p>
+                </div>
+              </div>
+
+              <dl className="space-y-0.5 text-xs">
+                <DetailRow icon={Phone} label="Phone">
+                  <span className="select-all font-mono font-bold tabular-nums text-slate-900">
+                    {lead.phone}
+                  </span>
+                </DetailRow>
+
+                {lead.email && (
+                  <DetailRow icon={Mail} label="Email">
+                    <a href={`mailto:${lead.email}`} className="block max-w-[190px] truncate font-semibold text-slate-800 hover:text-primary">
+                      {lead.email}
+                    </a>
+                  </DetailRow>
+                )}
+
+                <DetailRow icon={MapPin} label="Looking in">
+                  <span className="font-bold text-slate-900">{getLocationDisplayName(lead.interestedLocation)}</span>
+                </DetailRow>
+
+                <DetailRow icon={Calendar} label="Enquired">
+                  <span className="font-medium tabular-nums text-slate-700">
+                    {formatDate(lead.createdAt).split(',')[0]}
+                    <span className="ml-1.5 text-slate-400">({relativeTime(lead.createdAt)})</span>
+                  </span>
+                </DetailRow>
+
+                <DetailRow icon={Sparkles} label="Source">
+                  <span className="rounded-md bg-slate-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-700">
+                    {lead.source || 'Website'}
+                  </span>
+                </DetailRow>
+              </dl>
+            </section>
+
+            {/* Assignment History */}
+            {lead.assignmentHistory && lead.assignmentHistory.length > 0 && (
+              <section className="rounded-3xl border border-slate-200/80 bg-surface p-5 shadow-xs">
+                <AssignmentHistory history={lead.assignmentHistory} />
+              </section>
+            )}
+
+            {/* Queue shortcut. Prev/next already live in the sticky header, so
+                this is just the full-queue entry point. */}
+            <button
+              type="button"
+              onClick={() => setSidebarOpen(true)}
+              className="group flex w-full cursor-pointer items-center justify-center gap-2 rounded-2xl bg-slate-900 px-3.5 py-3 text-xs font-semibold text-white shadow-xs transition-colors hover:bg-slate-800"
+            >
+              <Layers className="h-4 w-4 text-slate-400 transition-colors group-hover:text-white" />
+              Browse lead queue ({allLeads.length})
+            </button>
+          </aside>
         </div>
       </div>
 

@@ -9,7 +9,6 @@ import {
   Mail,
   Clock,
   AlertCircle,
-  MessageCircle,
   ChevronLeft,
   ChevronRight,
   Edit3,
@@ -20,6 +19,7 @@ import {
   SlidersHorizontal
 } from 'lucide-react';
 import AssignmentHistory from '@/components/AssignmentHistory';
+import LeadPropertyPanel from '@/app/components/LeadPropertyPanel';
 import { getLocationDisplayName } from '@/utils/locations';
 import { useAgentStore, useCRMStore, useDashboardStore } from '@/stores';
 
@@ -609,39 +609,17 @@ export default function LeadDetailPage() {
                 <p className="text-xs text-slate-600">ID: {lead._id}</p>
               </div>
 
-              {/* Quick Communication Toolbar */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Email only — agents dial from their own phone, so the
+                  call/WhatsApp shortcuts were removed. */}
+              {lead.email && (
                 <a
-                  href={`tel:${lead.phone}`}
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-colors"
+                  href={`mailto:${lead.email}?subject=Property Inquiry - PropFinova`}
+                  className="flex items-center justify-center gap-2 p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold transition-colors"
                 >
-                  <Phone className="w-4 h-4 mb-1 text-emerald-600" />
-                  <span>Call</span>
+                  <Mail className="w-4 h-4 text-blue-600" />
+                  <span>Email client</span>
                 </a>
-                <a
-                  href={`https://wa.me/91${cleanPhone(lead.phone)}?text=Hello%20${encodeURIComponent(lead.name)},%20this%20is%20regarding%20your%20property%20inquiry%20with%20PropFinova.`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-800 text-xs font-bold transition-colors"
-                >
-                  <MessageCircle className="w-4 h-4 mb-1 text-emerald-600" />
-                  <span>WhatsApp</span>
-                </a>
-                {lead.email ? (
-                  <a
-                    href={`mailto:${lead.email}?subject=Property Inquiry - PropFinova`}
-                    className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-800 text-xs font-bold transition-colors"
-                  >
-                    <Mail className="w-4 h-4 mb-1 text-blue-600" />
-                    <span>Email</span>
-                  </a>
-                ) : (
-                  <div className="flex flex-col items-center justify-center p-2.5 rounded-xl bg-slate-50 border border-slate-100 text-slate-300 text-xs font-semibold">
-                    <Mail className="w-4 h-4 mb-1" />
-                    <span>No Email</span>
-                  </div>
-                )}
-              </div>
+              )}
 
               {/* Detail Items */}
               <div className="space-y-3 pt-4 border-t border-slate-100 text-xs">
@@ -678,6 +656,9 @@ export default function LeadDetailPage() {
                 <span>Update Status &amp; Add Note</span>
               </button>
             </div>
+
+            {/* On-call inventory: nearby areas + free-form search */}
+            <LeadPropertyPanel lead={lead} onLeadUpdated={setLead} />
 
             {/* Conversation Notes & Scheduled Intel */}
             <div className="bg-surface rounded-2xl border border-slate-200/80 shadow-xs p-6 space-y-4">
