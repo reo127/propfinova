@@ -14,6 +14,7 @@ import Screen from "../../components/Screen";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
 import PropertyCard from "../../components/PropertyCard";
 import BannerSlider from "../../components/BannerSlider";
+import ErrorState from "../../components/ErrorState";
 import LeadModal, { LEAD_PRESETS } from "../../components/LeadModal";
 import { propertiesApi, contentApi } from "../../lib/api";
 import { SUPPORT_TEL_HREF, whatsappHref } from "../../lib/contact";
@@ -40,6 +41,7 @@ export default function HomeScreen() {
   const [tab, setTab] = useState("buy");
   const [query, setQuery] = useState("");
   const [showLead, setShowLead] = useState(false);
+  const [loadError, setLoadError] = useState(null);
 
   const load = useCallback(async () => {
     const [props, bans, heroData] = await Promise.allSettled([
@@ -47,7 +49,16 @@ export default function HomeScreen() {
       contentApi.banners(),
       contentApi.heroImage(),
     ]);
-    if (props.status === "fulfilled") setProperties(props.value.data || []);
+
+    // Only the listings failing is worth surfacing — banners and the hero are
+    // decorative, so losing them should not block the feed.
+    if (props.status === "fulfilled") {
+      setProperties(props.value.data || []);
+      setLoadError(null);
+    } else {
+      setLoadError(props.reason?.message || "Request failed");
+    }
+
     if (bans.status === "fulfilled") setBanners(bans.value.data || []);
     if (heroData.status === "fulfilled") setHero(heroData.value.data || null);
   }, []);
@@ -222,6 +233,14 @@ export default function HomeScreen() {
                 </View>
               </View>
             ))
+          ) : loadError ? (
+            <ErrorState
+              message={loadError}
+              onRetry={() => {
+                setLoading(true);
+                load().finally(() => setLoading(false));
+              }}
+            />
           ) : properties.length === 0 ? (
             <View className="border border-dashed border-border rounded-2xl py-12 items-center">
               <Text className="text-muted text-center px-6">

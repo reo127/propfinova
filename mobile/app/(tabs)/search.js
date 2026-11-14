@@ -5,6 +5,7 @@ import { Search as SearchIcon, SlidersHorizontal, X, ArrowUpDown, Building2 } fr
 import Screen from "../../components/Screen";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
 import PropertyCard from "../../components/PropertyCard";
+import ErrorState from "../../components/ErrorState";
 import { propertiesApi } from "../../lib/api";
 import { parsePriceToNumber } from "../../lib/emi";
 
@@ -54,14 +55,18 @@ export default function SearchScreen() {
   const [showSort, setShowSort] = useState(false);
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const runSearch = useCallback(async (f) => {
     setLoading(true);
     try {
       const { data } = await propertiesApi.list(f);
       setResults(data);
-    } catch {
+      setError(null);
+    } catch (e) {
+      // Keep the failure distinct from a genuinely empty result set.
       setResults([]);
+      setError(e.message || "Request failed");
     } finally {
       setLoading(false);
     }
@@ -152,7 +157,11 @@ export default function SearchScreen() {
           <View className="flex-row items-center gap-2">
             <View className="w-1.5 h-1.5 rounded-full bg-primary" />
             <Text className="text-sm text-secondary font-semibold">
-              {loading ? "Searching…" : `${results.length} ${results.length === 1 ? "property" : "properties"}`}
+              {loading
+                ? "Searching…"
+                : error
+                ? "Couldn't load"
+                : `${results.length} ${results.length === 1 ? "property" : "properties"}`}
             </Text>
           </View>
           <Pressable onPress={() => setShowSort(true)} className="flex-row items-center gap-1.5">
@@ -167,6 +176,8 @@ export default function SearchScreen() {
           <ActivityIndicator color="#17855a" />
           <Text className="text-muted text-sm mt-3">Finding properties that match…</Text>
         </View>
+      ) : error ? (
+        <ErrorState message={error} onRetry={() => runSearch(filters)} />
       ) : (
         <FlatList
           data={sorted}
