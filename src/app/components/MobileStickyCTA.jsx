@@ -1,11 +1,12 @@
 'use client';
 import React from 'react';
+import { SUPPORT_TEL_HREF, whatsappHref } from '@/lib/contact';
 
 const MobileStickyCTA = () => {
     return (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-gray-200 p-2 flex gap-2 shadow-[0_-4px_10px_rgba(0,0,0,0.05)]">
             <a 
-                href="tel:+91XXXXXXXXXX" 
+                href={SUPPORT_TEL_HREF} 
                 className="flex-1 flex items-center justify-center gap-2 bg-surface border-2 border-primary text-primary py-3 rounded-lg font-bold text-sm active:bg-gray-50 transition-colors"
             >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -14,7 +15,7 @@ const MobileStickyCTA = () => {
                 Call Now
             </a>
             <a 
-                href="https://wa.me/91XXXXXXXXXX?text=Hi, I am interested in properties on PropFinova." 
+                href={whatsappHref("Hi, I am interested in properties on PropFinova.")} 
                 className="flex-1 flex items-center justify-center gap-2 bg-[#25D366] text-white py-3 rounded-lg font-bold text-sm active:bg-[#128C7E] transition-colors"
             >
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">

@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Phone, ShieldCheck } from 'lucide-react';
 import Logo from '../../../public/propfinova-logo.png'
+import { SUPPORT_TEL_HREF, SUPPORT_PHONE_DISPLAY } from '@/lib/contact';
 
 // Column links kept as data so the three groups stay on one visual rhythm.
 const LINK_GROUPS = [
@@ -101,7 +102,7 @@ const Footer = () => {
                         </h2>
                         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                             <a
-                                href="tel:+910000000000"
+                                href={SUPPORT_TEL_HREF}
                                 className="group flex flex-col rounded-2xl border border-border bg-background p-4 text-left transition-all duration-200 hover:border-primary hover:bg-surface hover:shadow-sm"
                             >
                                 <span className="text-sm font-semibold text-secondary transition-colors group-hover:text-primary">
@@ -112,7 +113,7 @@ const Footer = () => {
                                 </span>
                                 <span className="mt-2.5 flex items-center gap-1.5 text-xs text-muted">
                                     <Phone className="h-3.5 w-3.5" />
-                                    TBD Phone
+                                    {SUPPORT_PHONE_DISPLAY}
                                 </span>
                                 <span className="mt-1 flex items-center gap-1.5 text-xs text-muted">
                                     <MapPin className="h-3.5 w-3.5" />
