@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { ChevronDown } from 'lucide-react';
 import { isValidVideoUrl, getThumbnailUrl, getPlatformName } from '@/utils/videoUtils';
+import { getAllLocations } from '@/utils/locations';
 import { ACCEPT_IMAGES, ACCEPT_VIDEOS } from '@/lib/uploadTypes';
 
 const inputClass = "w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-medium text-slate-900 outline-none focus:border-primary focus:bg-surface focus:ring-2 focus:ring-primary/10 transition-colors placeholder:text-slate-400 placeholder:font-normal";
@@ -39,6 +40,7 @@ export default function ListProperty() {
   const [formData, setFormData] = useState({
     title: '',
     location: '',
+    mapLocationLink: '',
     priceFrom: '',
     priceTo: '',
     type: '',
@@ -109,7 +111,9 @@ export default function ListProperty() {
 
     if (storedUser && token) {
       const userData = JSON.parse(storedUser);
-      if (userData.role !== 'admin') {
+      // Brokers/builders list their own properties too; their submissions go
+      // in as `pending` for admin review (see POST /api/properties).
+      if (userData.role !== 'admin' && userData.role !== 'builder') {
         router.push('/');
         return;
       }
@@ -471,6 +475,7 @@ export default function ListProperty() {
       setFormData({
         title: '',
         location: '',
+        mapLocationLink: '',
         priceFrom: '',
         priceTo: '',
         type: '',
@@ -595,15 +600,45 @@ export default function ListProperty() {
 
               <div>
                 <label htmlFor="location" className={labelClass}>Location</label>
+                {/* A datalist gives the dropdown of known localities while
+                    still allowing a custom one to be typed in. */}
                 <input
                   type="text"
                   id="location"
                   name="location"
+                  list="known-locations"
                   value={formData.location}
                   onChange={handleChange}
                   className={inputClass}
-                  placeholder="e.g. Koramangala, Bangalore"
+                  placeholder="Pick a locality or type your own"
+                  autoComplete="off"
                 />
+                <datalist id="known-locations">
+                  {getAllLocations().map((loc) => (
+                    <option key={loc} value={`${loc}, Bangalore`} />
+                  ))}
+                </datalist>
+                <p className="mt-1 text-xs text-slate-500">
+                  Choose from the list or enter any other area.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="mapLocationLink" className={labelClass}>
+                  Map Location Link <span className="text-slate-400 font-normal normal-case">(optional — pins the map exactly)</span>
+                </label>
+                <input
+                  type="url"
+                  id="mapLocationLink"
+                  name="mapLocationLink"
+                  value={formData.mapLocationLink}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="Paste a Google Maps share link"
+                />
+                <p className="mt-1 text-xs text-slate-500">
+                  Leave blank and the map falls back to geocoding the location text above.
+                </p>
               </div>
 
               <div>

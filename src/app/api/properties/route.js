@@ -33,13 +33,17 @@ export async function GET(request) {
     const type = searchParams.get('type');
     const bhk = searchParams.get('bhk');
     const price = searchParams.get('price');
+    const mine = searchParams.get('mine');
 
     // Build filter object
     const filter = {};
     const andConditions = [];
 
-    // Only show approved properties to non-admin users; admins see all (for admin panel)
-    if (!decoded || decoded.role !== 'admin') {
+    if (mine === 'true' && decoded) {
+      // Owner viewing their own listings: every status, no one else's.
+      filter.user = decoded.id;
+    } else if (!decoded || decoded.role !== 'admin') {
+      // Only show approved properties to non-admin users; admins see all (for admin panel)
       andConditions.push({
         $or: [
           { status: 'approved' },
@@ -124,18 +128,19 @@ export async function POST(request) {
       );
     }
 
-    if (decoded.role !== 'admin') {
+    if (decoded.role !== 'admin' && decoded.role !== 'builder') {
       return NextResponse.json(
-        { success: false, message: 'Only admins can add properties' },
+        { success: false, message: 'Only brokers/builders and admins can add properties' },
         { status: 403 }
       );
     }
 
     const data = await request.json();
 
-    // Add user ID to property data
+    // Add user ID to property data. Admin submissions go live immediately;
+    // broker/builder submissions wait for admin approval.
     data.user = decoded.id;
-    data.status = 'approved';
+    data.status = decoded.role === 'admin' ? 'approved' : 'pending';
 
     // Create property
     const property = await Property.create(data);
