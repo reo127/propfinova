@@ -57,7 +57,8 @@ export default function ProfileScreen() {
         style: "destructive",
         onPress: async () => {
           await logout();
-          router.replace("/login");
+          // Guests can browse, so drop back to the feed rather than a wall.
+          router.replace("/");
         },
       },
     ]);

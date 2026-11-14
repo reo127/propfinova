@@ -8,6 +8,16 @@ import { useAuthStore } from "../lib/auth-store";
 import { useWishlistStore } from "../lib/wishlist-store";
 
 /**
+ * Anchor the root stack to the tab group. Without this the navigator mounts
+ * its first declared child, and on native there is no URL to resolve, so a
+ * launch landed on (auth)/login instead of the home feed.
+ *
+ * `anchor` replaced `initialRouteName` in expo-router 58 — the old key still
+ * works but logs a deprecation warning.
+ */
+export const unstable_settings = { anchor: "(tabs)" };
+
+/**
  * Browsing is open to everyone — the app opens on the property feed with no
  * login wall, and signing in is only asked for where it is actually needed
  * (saving a property, listing one, the account tab). The only redirect left
@@ -45,8 +55,8 @@ export default function RootLayout() {
         <StatusBar style="dark" />
         <AuthGate>
           <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="(auth)" />
             {/* Transparent header so the gallery runs full-bleed to the top
                 edge with just a floating back button over it. */}
             <Stack.Screen
