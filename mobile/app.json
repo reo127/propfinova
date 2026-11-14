@@ -20,7 +20,6 @@
     "android": {
       "package": "com.propfinova.app",
       "versionCode": 1,
-      "usesCleartextTraffic": true,
       "adaptiveIcon": {
         "backgroundColor": "#10251b",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -52,6 +51,14 @@
           "image": "./assets/splash-icon.png",
           "backgroundColor": "#f3faf6",
           "imageWidth": 200
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "usesCleartextTraffic": true
+          }
         }
       ]
     ],
