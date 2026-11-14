@@ -15,7 +15,9 @@ async function getProperty(id) {
 }
 
 export async function generateMetadata({ params }) {
-  const property = await getProperty(params.id);
+  // Next 16: `params` is a Promise and must be awaited before use.
+  const { id, slug } = await params;
+  const property = await getProperty(id);
 
   if (!property || property.status !== 'approved') {
     return { title: 'Property Not Found | PropFinova' };
@@ -31,7 +33,7 @@ export async function generateMetadata({ params }) {
 
   const image = property.gallery?.[0] || null;
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.propfinova.com';
-  const url = `${baseUrl}/property/${params.slug}/${params.id}`;
+  const url = `${baseUrl}/property/${slug}/${id}`;
 
   return {
     title,
@@ -55,9 +57,10 @@ export async function generateMetadata({ params }) {
 }
 
 export default async function PropertyPage({ params }) {
-  const property = await getProperty(params.id);
+  const { id, slug } = await params;
+  const property = await getProperty(id);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.propfinova.com';
-  const url = `${baseUrl}/property/${params.slug}/${params.id}`;
+  const url = `${baseUrl}/property/${slug}/${id}`;
 
   const bhkStr = property?.bhk ? `${property.bhk.toUpperCase()} ` : '';
   const typeStr = property?.type ? property.type.replace(/-/g, ' ') : 'Property';
