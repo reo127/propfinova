@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import Modal from './Modal';
 import LeadCaptureModal from './LeadCaptureModal';
+import WishlistButton from './WishlistButton';
 import EMICalculator from './EMICalculatorV2';
 import LocationMap from './LocationMap';
 import { formatPrice } from '../../utils/formatPrice';
@@ -584,7 +585,7 @@ export default function PropertyDetails({ initialData = null }) {
         { label: "Overview", id: "overview" },
         { label: "Amenities", id: "amenities" },
         { label: "About Project", id: "about-project" },
-        // { label: "Location Map", id: "location-map" }, // Hidden
+        { label: "Location Map", id: "location-map" },
         { label: "EMI Calculator", id: "emi-calculator" },
         { label: "Ratings & Reviews", id: "ratings-reviews" },
         { label: "About Location", id: "about-location" },
@@ -749,9 +750,12 @@ export default function PropertyDetails({ initialData = null }) {
                         </div>
 
                         <div className="max-w-4xl">
-                            <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-primary-darker">
-                                Premium Property Showcase
-                            </p>
+                            <div className="flex items-start justify-between gap-4">
+                                <p className="mb-3 text-sm font-medium uppercase tracking-[0.24em] text-primary-darker">
+                                    Premium Property Showcase
+                                </p>
+                                <WishlistButton propertyId={property._id} />
+                            </div>
                             <h1 className="text-3xl font-semibold leading-tight text-secondary sm:text-4xl lg:text-[3.2rem] lg:leading-[1.04]">
                                 {property.title}
                             </h1>
@@ -1216,8 +1220,8 @@ export default function PropertyDetails({ initialData = null }) {
                         )}
                     </section>
 
-                    {/* Location Map Section - hidden, set to true to re-enable */}
-                    {false && (
+                    {/* Location Map Section — OpenStreetMap tiles via Leaflet */}
+                    {(property.mapLocationLink || property.location) && (
                         <section id="location-map" className='mt-16 sm:mt-24 lg:mt-32'>
                             <div className="flex items-center gap-3 mb-6">
                                 <svg className="w-8 h-8 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
