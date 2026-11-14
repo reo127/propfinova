@@ -1,23 +1,29 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
+import { SUPPORT_TEL_HREF, whatsappHref } from '@/lib/contact';
 
 // Routes where the floating buttons get in the way instead of helping — on a
 // narrow screen they sit right on top of the password field and submit button.
 const HIDE_ON = ['/login', '/register'];
 
+// Staff areas. These buttons are a customer CTA ("call us about a property"),
+// so they have no purpose for an admin or an agent — and they float over the
+// bottom-right of every CRM screen.
+const HIDE_UNDER = ['/admin', '/agent'];
+
 export default function FloatingContact() {
   const pathname = usePathname();
-  const phoneNumber = '910000000000'; // TBD: replace with PropFinova's WhatsApp/phone number
-  const whatsappMessage = encodeURIComponent('Hi, I am interested in a property listed on PropFinova. Can you help me?');
+  const whatsappMessage = 'Hi, I am interested in a property listed on PropFinova. Can you help me?';
 
   if (HIDE_ON.includes(pathname)) return null;
+  if (HIDE_UNDER.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))) return null;
 
   return (
     <div className="fixed bottom-24 lg:bottom-6 right-4 lg:right-6 z-40 flex flex-col gap-3">
       {/* WhatsApp */}
       <a
-        href={`https://wa.me/${phoneNumber}?text=${whatsappMessage}`}
+        href={whatsappHref(whatsappMessage)}
         target="_blank"
         rel="noopener noreferrer"
         aria-label="Chat on WhatsApp"
@@ -30,7 +36,7 @@ export default function FloatingContact() {
 
       {/* Phone Call */}
       <a
-        href={`tel:+${phoneNumber}`}
+        href={SUPPORT_TEL_HREF}
         aria-label="Call us"
         className="w-14 h-14 bg-primary hover:bg-primary-dark text-btn-text rounded-full shadow-lg flex items-center justify-center transition-all hover:scale-110"
       >

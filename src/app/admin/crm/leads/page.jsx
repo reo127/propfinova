@@ -11,7 +11,6 @@ import {
   Download,
   Upload,
   Phone,
-  MessageCircle,
   Mail,
   Calendar,
   CalendarCheck,
@@ -1288,25 +1287,10 @@ export default function CRMLeadsPage() {
                         <td className="py-4 px-4 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center gap-2">
                             {lead.phone && (
-                              <a
-                                href={`tel:${lead.phone}`}
-                                className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                                title={`Call ${lead.phone}`}
-                              >
-                                <Phone className="w-3 h-3" />
-                                <span className="tabular-nums">{lead.phone}</span>
-                              </a>
-                            )}
-                            {lead.phone && (
-                              <a
-                                href={`https://wa.me/91${lead.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${lead.name}, regarding your real estate inquiry with PropFinova...`)}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="p-1 rounded-lg text-slate-400 hover:text-green-600 hover:bg-green-50 transition-colors"
-                                title="Chat on WhatsApp"
-                              >
-                                <MessageCircle className="w-4 h-4" />
-                              </a>
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-slate-700 bg-slate-100">
+                                <Phone className="w-3 h-3 text-slate-400" />
+                                <span className="select-all tabular-nums">{lead.phone}</span>
+                              </span>
                             )}
                             {lead.email && (
                               <a

@@ -8,7 +8,6 @@ import {
   Search,
   Filter,
   Phone,
-  MessageCircle,
   Mail,
   Calendar,
   CalendarCheck,
@@ -837,23 +836,10 @@ export default function AgentLeadsPage() {
                       <td className="py-4 px-4 whitespace-nowrap">
                         <div className="space-y-1.5" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center space-x-2">
-                            <a
-                              href={`tel:${lead.phone}`}
-                              className="inline-flex items-center space-x-1 text-xs font-semibold text-slate-700 hover:text-emerald-700 bg-slate-100 hover:bg-emerald-50 px-2 py-0.5 rounded-md transition-colors"
-                              title="Call Lead Directly"
-                            >
-                              <Phone className="w-3 h-3 text-emerald-600" />
-                              <span>{lead.phone}</span>
-                            </a>
-                            <a
-                              href={`https://wa.me/91${cleanPhone(lead.phone)}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                              title="Message on WhatsApp"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </a>
+                            <span className="inline-flex items-center space-x-1 text-xs font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+                              <Phone className="w-3 h-3 text-slate-400" />
+                              <span className="select-all">{lead.phone}</span>
+                            </span>
                           </div>
                           {lead.email && (
                             <a

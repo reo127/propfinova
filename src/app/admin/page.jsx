@@ -9,8 +9,6 @@ import {
   UserPlus,
   ArrowUpRight,
   ArrowRight,
-  Phone,
-  MessageCircle,
   MapPin,
   Clock,
   Sparkles,
@@ -363,26 +361,6 @@ export default function AdminDashboard() {
 
                       <td className="py-3.5 px-6 whitespace-nowrap text-right">
                         <div className="inline-flex items-center gap-1.5">
-                          {lead.phone && (
-                            <a
-                              href={`tel:${lead.phone}`}
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-50 transition-colors"
-                              title={`Call ${lead.name}`}
-                            >
-                              <Phone className="w-3.5 h-3.5" />
-                            </a>
-                          )}
-                          {lead.phone && (
-                            <a
-                              href={`https://wa.me/91${lead.phone.replace(/\D/g, '')}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="p-1.5 rounded-lg text-slate-500 hover:text-green-600 hover:bg-green-50 transition-colors"
-                              title="WhatsApp Message"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                            </a>
-                          )}
                           <Link
                             href={`/admin/crm/leads/${lead._id}`}
                             className="p-1.5 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/5 transition-colors"

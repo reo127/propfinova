@@ -392,13 +392,6 @@ export default function AgentDashboard() {
                     </div>
 
                     <div className="flex items-center space-x-2 sm:self-center shrink-0">
-                      <a
-                        href={`tel:${lead.phone}`}
-                        className="inline-flex items-center space-x-1.5 px-3 py-2 rounded-xl text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 transition-colors"
-                      >
-                        <Phone className="w-3.5 h-3.5" />
-                        <span>Call</span>
-                      </a>
                       <Link
                         href={`/agent/my-leads/${lead._id}`}
                         className="inline-flex items-center space-x-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-slate-900 hover:bg-slate-800 transition-colors shadow-xs"
