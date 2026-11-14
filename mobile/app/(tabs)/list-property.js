@@ -15,6 +15,7 @@ import {
   Plus,
 } from "lucide-react-native";
 import Screen from "../../components/Screen";
+import SignInPrompt from "../../components/SignInPrompt";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
 import Button from "../../components/Button";
 import { FormSection, Field, FieldPair, SelectChips, TagInput, LocationField } from "../../components/FormKit";
@@ -273,6 +274,18 @@ export default function ListPropertyScreen() {
       setSubmitting(false);
     }
   };
+
+  if (!token) {
+    return (
+      <Screen>
+        <SignInPrompt
+          icon={Building2}
+          title="Sign in to list a property"
+          message="Broker accounts can publish listings for our buyers to find."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>

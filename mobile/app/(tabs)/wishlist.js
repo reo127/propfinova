@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { View, Text, FlatList, Pressable } from "react-native";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Heart, Search as SearchIcon } from "lucide-react-native";
+import SignInPrompt from "../../components/SignInPrompt";
 import Screen from "../../components/Screen";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
 import PropertyCard from "../../components/PropertyCard";
@@ -18,6 +19,18 @@ export default function WishlistScreen() {
       load(token);
     }, [token])
   );
+
+  if (!token) {
+    return (
+      <Screen>
+        <SignInPrompt
+          icon={Heart}
+          title="Sign in to save properties"
+          message="Keep a shortlist of the homes you like and come back to them any time."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>

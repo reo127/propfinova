@@ -7,6 +7,12 @@ import { StatusBar } from "expo-status-bar";
 import { useAuthStore } from "../lib/auth-store";
 import { useWishlistStore } from "../lib/wishlist-store";
 
+/**
+ * Browsing is open to everyone — the app opens on the property feed with no
+ * login wall, and signing in is only asked for where it is actually needed
+ * (saving a property, listing one, the account tab). The only redirect left
+ * sends an already-signed-in user off the login/register screens.
+ */
 function AuthGate({ children }) {
   const { token, isHydrated, hydrate } = useAuthStore();
   const loadWishlist = useWishlistStore((s) => s.load);
@@ -19,10 +25,7 @@ function AuthGate({ children }) {
 
   useEffect(() => {
     if (!isHydrated) return;
-    const inAuthGroup = segments[0] === "(auth)";
-    if (!token && !inAuthGroup) {
-      router.replace("/login");
-    } else if (token && inAuthGroup) {
+    if (token && segments[0] === "(auth)") {
       router.replace("/");
     }
   }, [token, isHydrated, segments]);

@@ -11,10 +11,12 @@ import {
   Calculator,
   Newspaper,
   Search as SearchIcon,
+  User,
   ShieldCheck,
   FileText,
 } from "lucide-react-native";
 import Screen from "../../components/Screen";
+import SignInPrompt from "../../components/SignInPrompt";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
 import PropertyCard from "../../components/PropertyCard";
 import { useAuthStore } from "../../lib/auth-store";
@@ -60,6 +62,18 @@ export default function ProfileScreen() {
       },
     ]);
   };
+
+  if (!token) {
+    return (
+      <Screen>
+        <SignInPrompt
+          icon={User}
+          title="Sign in to your account"
+          message="Track saved properties, manage your listings and reach our team faster."
+        />
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
