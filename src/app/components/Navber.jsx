@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Search as SearchIcon, Building2, User as UserIcon } from 'lucide-react';
+import { Menu, X, Search as SearchIcon, Building2, User as UserIcon, Heart } from 'lucide-react';
 import Logo from '../../../public/propfinova-logo.png'
 
 const Navber = () => {
@@ -65,7 +65,8 @@ const Navber = () => {
     }
 
     return (
-        <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/70 supports-[backdrop-filter]:bg-background/70">
+        <>
+            <header className="sticky top-0 z-40 bg-background/85 backdrop-blur-xl border-b border-border/70 supports-[backdrop-filter]:bg-background/70">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                 {/* Main navbar */}
                 <div className="flex items-center justify-between py-3">
@@ -107,6 +108,13 @@ const Navber = () => {
                         >
                             <SearchIcon className="w-5 h-5" />
                         </Link>
+                        <Link
+                            href="/wishlist"
+                            aria-label="Saved properties"
+                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${pathname === '/wishlist' ? 'text-primary bg-primary/10' : 'text-secondary/70 hover:bg-secondary/5 hover:text-primary'}`}
+                        >
+                            <Heart className="w-5 h-5" />
+                        </Link>
                         <button
                             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                             aria-expanded={isMobileMenuOpen}
@@ -130,6 +138,13 @@ const Navber = () => {
                             className="flex items-center justify-center w-10 h-10 rounded-full text-secondary/70 hover:bg-secondary/5 hover:text-primary transition-colors"
                         >
                             <SearchIcon className="w-5 h-5" />
+                        </Link>
+                        <Link
+                            href="/wishlist"
+                            aria-label="Saved properties"
+                            className={`flex items-center justify-center w-10 h-10 rounded-full transition-colors ${pathname === '/wishlist' ? 'text-primary bg-primary/10' : 'text-secondary/70 hover:bg-secondary/5 hover:text-primary'}`}
+                        >
+                            <Heart className="w-5 h-5" />
                         </Link>
                         {user ? (
                             <>
@@ -180,10 +195,18 @@ const Navber = () => {
                     </div>
                 </div>
 
+            </div>
+            </header>
+
+            {/* Rendered as a sibling of <header>, not inside it: the header
+                uses backdrop-blur, and backdrop-filter creates a containing
+                block for position:fixed descendants — nested in there the
+                drawer sized itself against the header box instead of the
+                viewport, which is what broke the layout when opened. */}
                 {/* Mobile menu overlay */}
                 {isMobileMenuOpen && (
                     <div
-                        className="lg:hidden fixed inset-0 z-50 bg-secondary/40 backdrop-blur-sm transition-all duration-300 ease-in-out"
+                        className="lg:hidden fixed inset-0 z-60 bg-secondary/40 backdrop-blur-sm transition-all duration-300 ease-in-out"
                         onClick={() => setIsMobileMenuOpen(false)}
                     />
                 )}
@@ -195,7 +218,7 @@ const Navber = () => {
                     /* `invisible` when closed so the off-screen links leave the
                        tab order — aria-hidden alone would still let keyboard
                        users focus them. */
-                    className={`lg:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-background shadow-2xl transform transition-[transform,visibility] duration-300 ease-in-out z-50 ${isMobileMenuOpen ? 'translate-x-0 visible' : '-translate-x-full invisible'
+                    className={`lg:hidden fixed top-0 left-0 h-full w-80 max-w-[85vw] bg-background shadow-2xl transform transition-[transform,visibility] duration-300 ease-in-out z-60 ${isMobileMenuOpen ? 'translate-x-0 visible' : '-translate-x-full invisible'
                         }`}>
                     <div className="flex flex-col h-full">
                         {/* Header */}
@@ -225,6 +248,15 @@ const Navber = () => {
                             >
                                 <SearchIcon className="w-5 h-5 mr-3 opacity-60 group-hover:opacity-100" />
                                 Search All Properties
+                            </Link>
+
+                            <Link
+                                href="/wishlist"
+                                className={mobileLinkClass(pathname === '/wishlist')}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                <Heart className="w-5 h-5 mr-3 opacity-60 group-hover:opacity-100" />
+                                Saved Properties
                             </Link>
 
                             <div className="pt-3 pb-1">
@@ -349,8 +381,7 @@ const Navber = () => {
                         </div>
                     </div>
                 </div>
-            </div>
-        </header>
+        </>
     )
 }
 
