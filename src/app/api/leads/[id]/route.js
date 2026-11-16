@@ -1,10 +1,38 @@
 import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import jwt from 'jsonwebtoken';
+
+/**
+ * This route had no authentication at all: GET exposed a lead's full contact
+ * details and DELETE permanently removed it, both to anonymous callers.
+ * Verified against production with an unauthenticated request, which reached
+ * the database and answered "Lead not found" rather than rejecting the caller.
+ */
+function verify(request, allowedRoles) {
+  try {
+    const token = request.headers.get('authorization')?.split(' ')[1];
+    if (!token) return { ok: false, status: 401, message: 'Not authorized, please login' };
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (allowedRoles && !allowedRoles.includes(decoded.role)) {
+      return { ok: false, status: 403, message: 'You do not have permission to do that' };
+    }
+    return { ok: true, user: decoded };
+  } catch {
+    return { ok: false, status: 401, message: 'Invalid or expired session' };
+  }
+}
+
+const deny = (check) =>
+  NextResponse.json({ success: false, message: check.message }, { status: check.status });
 
 // GET - Get a single lead by ID
 export async function GET(request, { params }) {
   try {
+    const check = verify(request, ['admin', 'agent']);
+    if (!check.ok) return deny(check);
+
     await connectToDatabase();
     const { id } = await params;
 
@@ -33,6 +61,9 @@ export async function GET(request, { params }) {
 // PUT - Update lead information (name, email, phone, location)
 export async function PUT(request, { params }) {
   try {
+    const check = verify(request, ['admin', 'agent']);
+    if (!check.ok) return deny(check);
+
     await connectToDatabase();
     const { id } = await params;
 
@@ -72,6 +103,10 @@ export async function PUT(request, { params }) {
 // DELETE - Delete a lead by ID
 export async function DELETE(request, { params }) {
   try {
+    // Removing a lead is destructive and admin-only.
+    const check = verify(request, ['admin']);
+    if (!check.ok) return deny(check);
+
     await connectToDatabase();
     const { id } = await params;
 

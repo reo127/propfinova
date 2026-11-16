@@ -471,7 +471,10 @@ export default function CRMLeadsPage() {
     if (!confirm('Are you sure you want to permanently delete this lead?')) return;
 
     try {
-      const response = await fetch(`/api/leads/${leadId}`, { method: 'DELETE' });
+      const response = await fetch(`/api/leads/${leadId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || 'Failed to delete lead');
       deleteLeadFromCache(leadId);

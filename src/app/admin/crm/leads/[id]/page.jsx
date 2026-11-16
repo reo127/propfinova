@@ -223,7 +223,9 @@ export default function LeadDetailPage() {
   const fetchLeadDetails = async () => {
     try {
       // Fetch the specific lead by ID
-      const response = await fetch(`/api/leads/${params.id}`);
+      const response = await fetch(`/api/leads/${params.id}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
       const data = await response.json();
 
       if (data.success) {
