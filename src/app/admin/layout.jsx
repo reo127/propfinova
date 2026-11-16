@@ -22,6 +22,7 @@ import {
   Globe,
   FileSpreadsheet
 } from 'lucide-react';
+import FollowUpReminder from '@/app/components/FollowUpReminder';
 
 export default function AdminLayout({ children }) {
   const router = useRouter();
@@ -267,6 +268,9 @@ export default function AdminLayout({ children }) {
           {children}
         </main>
       </div>
+
+      {/* Due follow-up reminders, anywhere in the admin CRM */}
+      <FollowUpReminder />
     </div>
   );
 }

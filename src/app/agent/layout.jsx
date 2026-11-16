@@ -18,6 +18,7 @@ import {
   ExternalLink,
   PhoneCall
 } from 'lucide-react';
+import FollowUpReminder from '@/app/components/FollowUpReminder';
 
 export default function AgentLayout({ children }) {
   const router = useRouter();
@@ -297,6 +298,9 @@ export default function AgentLayout({ children }) {
       <main className="flex-1">
         {children}
       </main>
+
+      {/* Due follow-up reminders, anywhere in the agent portal */}
+      <FollowUpReminder />
 
       {/* Executive Footer Bar */}
       <footer className="bg-surface border-t border-slate-200/80 py-4 px-6 text-center text-xs text-slate-600 flex flex-col sm:flex-row items-center justify-between max-w-7xl mx-auto w-full">
