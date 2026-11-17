@@ -138,17 +138,18 @@ export default function AuthLayout({ title, subtitle, children, altPrompt, altLa
           }}
         />
 
+        {/* Ink chip, not the old cream one: the wordmark is white-on-
+            transparent and vanished against a light panel. */}
         <Link
           href="/"
-          className="inline-flex w-fit items-center rounded-xl px-3 py-2 backdrop-blur-sm"
-          style={{ backgroundColor: 'rgba(247,244,236,0.94)' }}
+          className="inline-flex w-fit items-center rounded-xl bg-secondary/80 px-3 py-2 backdrop-blur-sm"
         >
           <Image
             src="/propfinova-logo.png"
             alt="PropFinova"
             width={132}
-            height={46}
-            className="h-auto w-[104px] object-contain sm:w-[128px]"
+            height={73}
+            className="h-9 w-auto object-contain sm:h-10"
             priority
           />
         </Link>

@@ -99,10 +99,13 @@ export const metadata = {
     telephone: false,
   },
   icons: {
+    // The .ico carries 16/32/48/64/128/256 so each surface picks a size that
+    // is actually sharp, instead of downscaling one large PNG everywhere.
     icon: [
-      { url: "/propfinova-icon.png", type: "image/png" },
-      { url: "/propfinova-icon.png" },
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/propfinova-icon.png", type: "image/png", sizes: "1024x1024" },
     ],
+    shortcut: "/favicon.ico",
     apple: "/propfinova-icon.png",
   },
   openGraph: {
@@ -190,7 +193,8 @@ export default async function RootLayout({ children }) {
           src="https://t.contentsquare.net/uxa/78bbf96b8c928.js"
           strategy="afterInteractive"
         />
-        <link rel="icon" href="/propfinova-icon.png" type="image/png" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
+        <link rel="icon" href="/propfinova-icon.png" type="image/png" sizes="1024x1024" />
         <link rel="apple-touch-icon" href="/propfinova-icon.png" />
         {/* Browser chrome follows the admin's primary colour too */}
         <meta name="theme-color" content={theme.primary} />
@@ -201,7 +205,7 @@ export default async function RootLayout({ children }) {
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="600" />
         <meta name="twitter:image" content="/propfinova-logo.png" />
-        <link rel="shortcut icon" href="/propfinova-icon.png" />
+        <link rel="shortcut icon" href="/favicon.ico" />
         <link rel="manifest" href="/site.webmanifest" />
       </head>
       <body

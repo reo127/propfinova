@@ -73,11 +73,16 @@ const Navber = () => {
                     {/* Logo */}
                     <Link href="/" className="flex-shrink-0">
                         <div className="flex items-center">
-                            <Image
-                                src={Logo}
-                                alt="PropFinova Logo"
-                                className="h-11 w-auto rounded-md"
-                            />
+                            {/* The wordmark is white-on-transparent, drawn for dark
+                                backgrounds. On this light surface it would be
+                                invisible, so it sits on an ink chip. */}
+                            <span className="inline-flex items-center rounded-xl bg-secondary px-3 py-1.5">
+                                <Image
+                                    src={Logo}
+                                    alt="PropFinova Logo"
+                                    className="h-8 w-auto"
+                                />
+                            </span>
                         </div>
                     </Link>
 
@@ -223,13 +228,13 @@ const Navber = () => {
                     <div className="flex flex-col h-full">
                         {/* Header */}
                         <div className="flex items-center justify-between p-4 border-b border-border">
-                            <div className="flex items-center">
+                            <span className="inline-flex items-center rounded-xl bg-secondary px-3 py-1.5">
                                 <Image
                                     src={Logo}
                                     alt="PropFinova Logo"
-                                    className="h-10 w-auto rounded-md"
+                                    className="h-7 w-auto"
                                 />
-                            </div>
+                            </span>
                             <button
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className="p-2 rounded-lg text-secondary hover:bg-secondary/5 transition-colors duration-200 cursor-pointer"

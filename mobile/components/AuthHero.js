@@ -37,7 +37,13 @@ export default function AuthHero({ eyebrow, title, subtitle }) {
       <View className="absolute bottom-0 left-0 right-0 h-2/3 bg-secondary opacity-80" />
 
       <View className="flex-1 px-6 justify-between" style={{ paddingTop: insets.top + 12 }}>
-        <Image source={require("../assets/propfinova-logo.png")} className="h-9 w-32" resizeMode="contain" />
+        {/* Width tracks the artwork's ~1.8:1 ratio so the box is not wider
+            than the mark it contains. */}
+        <Image
+          source={require("../assets/propfinova-logo.png")}
+          className="h-10 w-[72px]"
+          resizeMode="contain"
+        />
 
         <View className="pb-10">
           {eyebrow ? <View className="h-px w-10 bg-primary mb-4" /> : null}

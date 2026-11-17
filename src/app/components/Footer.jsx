@@ -42,13 +42,16 @@ const Footer = () => {
                 {/* Brand + link columns */}
                 <div className="grid gap-10 py-14 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
                     <div className="max-w-xs">
-                        <Image
-                            src={Logo}
-                            alt="PropFinova logo"
-                            width={56}
-                            height={56}
-                            className="h-14 w-14 rounded-xl object-contain"
-                        />
+                        {/* Height-constrained with auto width so the ~1.8:1
+                            wordmark is never squashed, on an ink chip because
+                            the artwork is white-on-transparent. */}
+                        <span className="inline-flex items-center rounded-xl bg-secondary px-3.5 py-2">
+                            <Image
+                                src={Logo}
+                                alt="PropFinova logo"
+                                className="h-9 w-auto object-contain"
+                            />
+                        </span>
                         <p className="mt-4 text-sm leading-relaxed text-muted">
                             New projects, verified listings, and trusted agents across India.
                         </p>
