@@ -9,6 +9,7 @@ import {
   ChevronRight,
   Phone,
   MessageCircle,
+  Landmark,
 } from "lucide-react-native";
 import Screen from "../../components/Screen";
 import { TAB_BAR_CLEARANCE } from "../../components/TabBar";
@@ -265,6 +266,24 @@ export default function HomeScreen() {
             </>
           )}
         </View>
+
+        {/* Home loan entry point — buyers usually need financing, so this
+            sits directly under the listings rather than behind the menu. */}
+        <Pressable
+          onPress={() => router.push("/loans")}
+          className="mx-4 mt-8 flex-row items-center gap-3.5 bg-surface border border-border rounded-2xl p-4"
+        >
+          <View className="w-11 h-11 rounded-2xl bg-primary-soft items-center justify-center">
+            <Landmark size={20} color="#17855a" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-bold text-secondary">Need a home loan?</Text>
+            <Text className="text-xs text-muted mt-0.5">
+              Compare offers and check what you qualify for
+            </Text>
+          </View>
+          <ChevronRight size={18} color="#9ca8a2" />
+        </Pressable>
 
         {/* Lead-gen band */}
         <View className="mx-4 mt-8 rounded-3xl bg-secondary px-5 py-7">

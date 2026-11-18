@@ -70,6 +70,14 @@ export const leadsApi = {
   create: (payload) => request("/api/leads", { method: "POST", body: payload }),
 };
 
+export const loansApi = {
+  list: () => request("/api/loans"),
+  get: (id) => request(`/api/loans/${id}`),
+  apply: (payload, token) =>
+    request("/api/loan-applications", { method: "POST", body: payload, token }),
+  myApplications: (token) => request("/api/loan-applications?mine=true", { token }),
+};
+
 export const contentApi = {
   banners: () => request("/api/banners"),
   heroImage: () => request("/api/hero-image"),

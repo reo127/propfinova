@@ -9,6 +9,7 @@ import {
   Building2,
   ChevronRight,
   Calculator,
+  Landmark,
   Newspaper,
   Search as SearchIcon,
   User,
@@ -152,6 +153,7 @@ export default function ProfileScreen() {
         <Section title="Explore">
           <Row icon={SearchIcon} label="Browse properties" onPress={() => router.push("/search")} />
           <Row icon={Heart} label="My wishlist" onPress={() => router.push("/wishlist")} />
+          <Row icon={Landmark} label="Home loans" onPress={() => router.push("/loans")} />
           <Row icon={Calculator} label="Property calculators" onPress={() => router.push("/calculators")} />
           <Row icon={Newspaper} label="Blog & insights" onPress={() => router.push("/blog")} last />
         </Section>

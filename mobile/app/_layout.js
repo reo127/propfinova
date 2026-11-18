@@ -72,6 +72,7 @@ export default function RootLayout() {
             />
             <Stack.Screen name="about" options={{ headerShown: true, title: "About" }} />
             <Stack.Screen name="contact" options={{ headerShown: true, title: "Contact Us" }} />
+            <Stack.Screen name="loans/index" options={{ headerShown: true, title: "Home Loans" }} />
             <Stack.Screen name="calculators" options={{ headerShown: true, title: "Calculators" }} />
             <Stack.Screen name="legal" options={{ headerShown: true, title: "Privacy & Terms" }} />
             <Stack.Screen name="blog/index" options={{ headerShown: true, title: "Blog" }} />

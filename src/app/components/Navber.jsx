@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react'
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Search as SearchIcon, Building2, User as UserIcon, Heart } from 'lucide-react';
+import { Menu, X, Search as SearchIcon, Building2, User as UserIcon, Heart, Landmark } from 'lucide-react';
 import Logo from '../../../public/propfinova-logo.png'
 
 const Navber = () => {
@@ -91,6 +91,7 @@ const Navber = () => {
                         {[
                             { href: '/search?tab=buy', label: 'Buy' },
                             { href: '/search?tab=new', label: 'New Projects' },
+                            { href: '/loans', label: 'Home Loans' },
                             { href: '/about', label: 'About' },
                             { href: '/blog', label: 'Blog' },
                         ].map(({ href, label }) => {
@@ -297,6 +298,14 @@ const Navber = () => {
                                 New Projects
                             </Link>
 
+                            <Link
+                                href="/loans"
+                                className={mobileLinkClass(pathname === '/loans')}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                            >
+                                <Landmark className="w-5 h-5 mr-3 opacity-60 group-hover:opacity-100" />
+                                Home Loans
+                            </Link>
                             <Link
                                 href="/about"
                                 className={mobileLinkClass(pathname === '/about')}

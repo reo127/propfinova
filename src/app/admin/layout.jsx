@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   ExternalLink,
   Globe,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Landmark
 } from 'lucide-react';
 import FollowUpReminder from '@/app/components/FollowUpReminder';
 
@@ -80,6 +81,11 @@ export default function AdminLayout({ children }) {
       name: 'Property Search',
       href: '/admin/property-search',
       icon: Search,
+    },
+    {
+      name: 'Loans',
+      href: '/admin/loans',
+      icon: Landmark,
     },
     {
       name: 'Property Sheet',
@@ -343,6 +349,7 @@ function SidebarContent({
             pathname === item.href ||
             (item.href === '/admin/crm/leads' && pathname.startsWith('/admin/crm')) ||
             (item.href === '/admin/property-search' && pathname.startsWith('/admin/property-search')) ||
+            (item.href === '/admin/loans' && pathname.startsWith('/admin/loans')) ||
             (item.href === '/ai-assistant' && pathname.startsWith('/ai-assistant')) ||
             (item.href === '/admin/blogs' && pathname.startsWith('/admin/blogs'));
 
