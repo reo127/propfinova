@@ -15,6 +15,7 @@ import {
   User,
   ShieldCheck,
   FileText,
+  IdCard,
 } from "lucide-react-native";
 import Screen from "../../components/Screen";
 import SignInPrompt from "../../components/SignInPrompt";
@@ -150,10 +151,15 @@ export default function ProfileScreen() {
         )}
 
         {/* Menu */}
+        <Section title="My Loans">
+          <Row icon={FileText} label="My loan applications" onPress={() => router.push("/my-loan-applications")} />
+          <Row icon={IdCard} label="My loan profile" onPress={() => router.push("/loan-profile")} last />
+        </Section>
+
         <Section title="Explore">
           <Row icon={SearchIcon} label="Browse properties" onPress={() => router.push("/search")} />
           <Row icon={Heart} label="My wishlist" onPress={() => router.push("/wishlist")} />
-          <Row icon={Landmark} label="Home loans" onPress={() => router.push("/loans")} />
+          <Row icon={Landmark} label="Loans" onPress={() => router.push("/loans")} />
           <Row icon={Calculator} label="Property calculators" onPress={() => router.push("/calculators")} />
           <Row icon={Newspaper} label="Blog & insights" onPress={() => router.push("/blog")} last />
         </Section>

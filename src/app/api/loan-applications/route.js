@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import connectToDatabase from '@/lib/mongodb';
 import LoanApplication, { CLOSED_STATUSES } from '@/models/LoanApplication';
 import LoanProduct from '@/models/LoanProduct';
+import LoanProfile from '@/models/LoanProfile';
 import '@/models/User';
 import { requireAuth, authError, optionalAuth } from '@/lib/apiAuth';
 
@@ -44,7 +45,7 @@ export async function GET(request) {
     }
 
     const applications = await LoanApplication.find(filter)
-      .populate('loanProduct', 'lenderName productName interestRateMin interestRateMax')
+      .populate('loanProduct', 'lenderName productName interestRateMin interestRateMax loanType')
       .sort({ createdAt: -1 })
       .limit(200)
       .lean();
@@ -56,10 +57,15 @@ export async function GET(request) {
   }
 }
 
-// POST - apply. Deliberately open to guests: requiring an account before a
-// customer can enquire would lose applications, exactly as it would for leads.
+// POST - apply. Requires login (unlike property leads) so the applicant has
+// an account the KYC/employment profile below can be saved against and
+// prefilled from next time.
 export async function POST(request) {
   try {
+    const check = requireAuth(request);
+    if (!check.ok) return authError(check);
+    const user = check.user;
+
     await connectToDatabase();
     const data = await request.json();
 
@@ -71,13 +77,53 @@ export async function POST(request) {
       );
     }
 
-    const user = optionalAuth(request);
+    // Save/update the reusable profile from whatever was just submitted, so
+    // the next application opens prefilled without a separate save step.
+    await LoanProfile.findOneAndUpdate(
+      { user: user.id },
+      {
+        $set: {
+          fullName: data.applicantName,
+          dateOfBirth: data.dateOfBirth || null,
+          gender: data.gender || '',
+          maritalStatus: data.maritalStatus || '',
+          address: data.address || '',
+          panNumber: data.panNumber || '',
+          aadhaarNumber: data.aadhaarNumber || '',
+          employmentType: data.employmentType,
+          employerName: data.employerName || '',
+          designation: data.designation || '',
+          monthlyIncome: Number(data.monthlyIncome) || 0,
+          existingEmi: Number(data.existingEmi) || 0,
+          workExperienceYears: Number(data.workExperienceYears) || 0,
+          creditScore: data.creditScore ? Number(data.creditScore) : null,
+          ...(Array.isArray(data.documents) && data.documents.length ? { documents: data.documents } : {}),
+        },
+      },
+      { upsert: true, runValidators: true }
+    );
+
+    // Explicit allowlist rather than spreading the raw body — the pipeline
+    // fields below (status, sanctionedAmount, notes, ...) are admin-only and
+    // must never be settable from a client-submitted application.
+    const {
+      applicantName, phone, email, dateOfBirth, gender, maritalStatus, address,
+      panNumber, aadhaarNumber, employmentType, employerName, designation,
+      monthlyIncome, existingEmi, workExperienceYears, creditScore,
+      loanAmount, tenureYears, purpose, propertyValue, propertyLocation, property,
+      loanDetails, documents,
+    } = data;
 
     const application = await LoanApplication.create({
-      ...data,
-      user: user?.id || null,
+      loanProduct: data.loanProduct,
+      applicantName, phone, email, dateOfBirth, gender, maritalStatus, address,
+      panNumber, aadhaarNumber, employmentType, employerName, designation,
+      monthlyIncome, existingEmi, workExperienceYears, creditScore,
+      loanAmount, tenureYears, purpose, propertyValue, propertyLocation, property,
+      loanDetails, documents,
+      user: user.id,
       // Copied so the application still reads correctly if the offer is
-      // edited or withdrawn later.
+      // edited or withdrawn later, or if the profile above is later changed.
       lenderNameSnapshot: product.lenderName,
       productNameSnapshot: product.productName,
       status: 'submitted',

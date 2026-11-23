@@ -277,7 +277,7 @@ export default function HomeScreen() {
             <Landmark size={20} color="#17855a" />
           </View>
           <View className="flex-1">
-            <Text className="font-bold text-secondary">Need a home loan?</Text>
+            <Text className="font-bold text-secondary">Need a loan?</Text>
             <Text className="text-xs text-muted mt-0.5">
               Compare offers and check what you qualify for
             </Text>

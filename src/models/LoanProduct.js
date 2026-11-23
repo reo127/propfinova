@@ -1,7 +1,8 @@
 import mongoose from 'mongoose';
 
 /**
- * A home-loan offer from a partner bank or NBFC, as listed on the marketplace.
+ * A loan offer (any type — home, personal, business, car, education, gold…)
+ * from a partner bank or NBFC, as listed on the marketplace.
  *
  * PropFinova does not lend — it lists partner offers, collects applications and
  * hands qualified ones to the lender, which is how every comparable Indian
@@ -21,6 +22,12 @@ export const LOAN_TYPES = [
   'home-improvement',
   'loan-against-property',
   'nri-home-loan',
+  'personal-loan',
+  'business-loan',
+  'car-loan',
+  'education-loan',
+  'gold-loan',
+  'other',
 ];
 
 export const EMPLOYMENT_TYPES = ['salaried', 'self-employed', 'both'];

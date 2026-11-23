@@ -11,7 +11,10 @@ const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get("window");
 function videoSource(url) {
   const embed = getEmbedUrl(url);
   if (!embed) return { uri: url };
-  if (!isDirectVideo(url)) return { uri: embed };
+  // WebView loads the embed URL directly (no page it's "embedded" in), so it
+  // sends no Referer at all — YouTube's player then fails with error 153
+  // ("video player configuration error"). Sending one fixes it.
+  if (!isDirectVideo(url)) return { uri: embed, headers: { Referer: "https://propfinova.com" } };
   return {
     html: `<body style="margin:0;background:#000;display:flex;align-items:center;justify-content:center;height:100%">
       <video src="${embed}" controls playsinline style="width:100%;height:100%;object-fit:contain"></video>

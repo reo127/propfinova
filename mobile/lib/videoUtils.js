@@ -61,3 +61,7 @@ export function getThumbnailUrl(url) {
 export function isDirectVideo(url) {
   return getVideoId(url)?.platform === "direct";
 }
+
+export function isValidVideoUrl(url) {
+  return getVideoId(url) !== null;
+}

@@ -1,24 +1,17 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Landmark, Percent, Clock, Wallet, Check, Loader2, ArrowRight,
   Calculator, ShieldCheck, Info,
 } from 'lucide-react';
 import { calculateEmi, estimateEligibility, processingFee, formatMoney } from '@/lib/loanMath';
+import { LOAN_TYPE_LABELS } from '@/lib/loanCategories';
 import LoanApplyModal from '../components/LoanApplyModal';
 
-const LOAN_TYPE_LABELS = {
-  'home-loan': 'Home Loan',
-  'balance-transfer': 'Balance Transfer',
-  'plot-loan': 'Plot Loan',
-  construction: 'Construction',
-  'home-improvement': 'Home Improvement',
-  'loan-against-property': 'Loan Against Property',
-  'nri-home-loan': 'NRI Home Loan',
-};
-
 export default function LoansPage() {
+  const router = useRouter();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [typeFilter, setTypeFilter] = useState('');
@@ -70,6 +63,17 @@ export default function LoansPage() {
   );
 
   const setField = (key) => (e) => setCalc((p) => ({ ...p, [key]: e.target.value }));
+
+  // Applying needs an account — the KYC/employment profile it builds up is
+  // saved against the user, so there is nowhere to save it for a guest.
+  const handleApply = (product) => {
+    if (!localStorage.getItem('token')) {
+      router.push('/login');
+      return;
+    }
+    setApplyFor(product);
+  };
+
   const numberInput =
     'w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm font-semibold text-secondary outline-none focus:border-primary focus:bg-surface';
 
@@ -80,13 +84,13 @@ export default function LoansPage() {
         <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-semibold text-accent">
             <Landmark className="h-3.5 w-3.5" />
-            Home Loans
+            Loans
           </span>
           <h1
             className="mt-4 max-w-2xl text-3xl text-white sm:text-4xl"
             style={{ fontFamily: 'var(--font-heading)' }}
           >
-            Compare home loan offers from trusted lenders
+            Compare loan offers from trusted lenders
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-white/70 sm:text-base">
             Check what you qualify for, compare rates and EMIs side by side, and apply in minutes.
@@ -211,7 +215,7 @@ export default function LoansPage() {
                     product={p}
                     amount={Number(calc.loanAmount)}
                     tenure={Number(calc.tenureYears)}
-                    onApply={() => setApplyFor(p)}
+                    onApply={() => handleApply(p)}
                   />
                 ))}
               </div>

@@ -1,20 +1,31 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput } from "react-native";
+import { View, Text, ScrollView, Pressable, ActivityIndicator, TextInput, Modal } from "react-native";
 import Slider from "@react-native-community/slider";
 import {
-  Landmark, Percent, Clock, Wallet, Check, ArrowRight, Calculator, Info, ShieldCheck,
+  Landmark, Percent, Clock, Wallet, Check, ArrowRight, Calculator, Info, ShieldCheck, X,
 } from "lucide-react-native";
 import Screen from "../../components/Screen";
 import ErrorState from "../../components/ErrorState";
 import LoanApplySheet from "../../components/LoanApplySheet";
+import SignInPrompt from "../../components/SignInPrompt";
 import { loansApi } from "../../lib/api";
+import { useAuthStore } from "../../lib/auth-store";
 import { calculateEmi, estimateEligibility, processingFee, formatMoney } from "../../lib/loanMath";
 
 export default function LoansScreen() {
+  const token = useAuthStore((s) => s.token);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [applyFor, setApplyFor] = useState(null);
+  const [showSignIn, setShowSignIn] = useState(false);
+
+  // Applying needs an account — the KYC/employment profile it builds up is
+  // saved against the user, so there is nowhere to save it for a guest.
+  const handleApply = (product) => {
+    if (!token) { setShowSignIn(true); return; }
+    setApplyFor(product);
+  };
 
   const [calc, setCalc] = useState({
     loanAmount: 4000000,
@@ -59,7 +70,7 @@ export default function LoansScreen() {
         <View className="mx-4 mt-2 rounded-3xl bg-secondary px-5 py-6">
           <View className="flex-row items-center gap-1.5 bg-white/10 self-start px-3 py-1.5 rounded-full">
             <Landmark size={13} color="#6fcf9a" />
-            <Text className="text-accent text-[11px] font-bold">HOME LOANS</Text>
+            <Text className="text-accent text-[11px] font-bold">LOANS</Text>
           </View>
           <Text className="text-white text-[22px] leading-7 font-bold mt-3">
             Compare offers from trusted lenders
@@ -178,7 +189,7 @@ export default function LoansScreen() {
                 product={p}
                 amount={calc.loanAmount}
                 tenure={calc.tenureYears}
-                onApply={() => setApplyFor(p)}
+                onApply={() => handleApply(p)}
               />
             ))
           )}
@@ -191,6 +202,24 @@ export default function LoansScreen() {
           prefill={calc}
           onClose={() => setApplyFor(null)}
         />
+      )}
+
+      {showSignIn && (
+        <Modal visible transparent animationType="slide" onRequestClose={() => setShowSignIn(false)}>
+          <View className="flex-1 bg-black/50 justify-end">
+            <View className="bg-surface rounded-t-3xl" style={{ maxHeight: "92%" }}>
+              <View className="flex-row justify-end px-5 pt-5">
+                <Pressable onPress={() => setShowSignIn(false)} hitSlop={10}>
+                  <X size={20} color="#5c7268" />
+                </Pressable>
+              </View>
+              <SignInPrompt
+                title="Sign in to apply"
+                message="Your KYC and employment details are saved to your account, so you never have to fill this out twice."
+              />
+            </View>
+          </View>
+        </Modal>
       )}
     </Screen>
   );

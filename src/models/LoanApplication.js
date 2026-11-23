@@ -52,10 +52,14 @@ const LoanApplicationSchema = new mongoose.Schema(
     },
     email: { type: String, default: '', trim: true, lowercase: true },
     dateOfBirth: { type: Date, default: null },
+    gender: { type: String, default: '' },
+    maritalStatus: { type: String, default: '' },
+    address: { type: String, default: '', trim: true },
     panNumber: { type: String, default: '', trim: true, uppercase: true },
+    aadhaarNumber: { type: String, default: '', trim: true },
 
-    // Set when a signed-in user applies, so they can track their own file.
-    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+    // Login is required to apply, so this always points at the applicant.
+    user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
 
     // ---- employment & income ------------------------------------------
     employmentType: {
@@ -64,6 +68,7 @@ const LoanApplicationSchema = new mongoose.Schema(
       required: true,
     },
     employerName: { type: String, default: '', trim: true },
+    designation: { type: String, default: '', trim: true },
     monthlyIncome: { type: Number, required: true, min: 0 },
     // Drives the FOIR check — lenders cap total EMIs at roughly half of income.
     existingEmi: { type: Number, default: 0, min: 0 },
@@ -73,10 +78,17 @@ const LoanApplicationSchema = new mongoose.Schema(
     // ---- the request ---------------------------------------------------
     loanAmount: { type: Number, required: true, min: 0 },
     tenureYears: { type: Number, required: true, min: 1, max: 40 },
+    purpose: { type: String, default: '', trim: true },
+    // Legacy home-loan-specific pair, kept for the "home" category. Every
+    // other category's equivalent extras live in loanDetails below.
     propertyValue: { type: Number, default: 0, min: 0 },
     propertyLocation: { type: String, default: '', trim: true },
     // Set when the application starts from a specific listing.
     property: { type: mongoose.Schema.Types.ObjectId, ref: 'Property', default: null },
+    // Category-specific extras (business turnover, vehicle price, course
+    // details, etc.) — keyed by field per src/lib/loanCategories.js, loosely
+    // typed on purpose so adding a category never needs a schema migration.
+    loanDetails: { type: mongoose.Schema.Types.Mixed, default: {} },
 
     // ---- pipeline ------------------------------------------------------
     status: {

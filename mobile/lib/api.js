@@ -78,6 +78,11 @@ export const loansApi = {
   myApplications: (token) => request("/api/loan-applications?mine=true", { token }),
 };
 
+export const loanProfileApi = {
+  get: (token) => request("/api/loan-profile", { token }),
+  save: (payload, token) => request("/api/loan-profile", { method: "PUT", body: payload, token }),
+};
+
 export const contentApi = {
   banners: () => request("/api/banners"),
   heroImage: () => request("/api/hero-image"),

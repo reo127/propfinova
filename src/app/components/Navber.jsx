@@ -91,7 +91,7 @@ const Navber = () => {
                         {[
                             { href: '/search?tab=buy', label: 'Buy' },
                             { href: '/search?tab=new', label: 'New Projects' },
-                            { href: '/loans', label: 'Home Loans' },
+                            { href: '/loans', label: 'Loans' },
                             { href: '/about', label: 'About' },
                             { href: '/blog', label: 'Blog' },
                         ].map(({ href, label }) => {
@@ -304,7 +304,7 @@ const Navber = () => {
                                 onClick={() => setIsMobileMenuOpen(false)}
                             >
                                 <Landmark className="w-5 h-5 mr-3 opacity-60 group-hover:opacity-100" />
-                                Home Loans
+                                Loans
                             </Link>
                             <Link
                                 href="/about"

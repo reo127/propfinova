@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 import { X, Loader2, Plus } from 'lucide-react';
-
-const LOAN_TYPES = [
-  ['home-loan', 'Home Loan'],
-  ['balance-transfer', 'Balance Transfer'],
-  ['plot-loan', 'Plot Loan'],
-  ['construction', 'Construction'],
-  ['home-improvement', 'Home Improvement'],
-  ['loan-against-property', 'Loan Against Property'],
-  ['nri-home-loan', 'NRI Home Loan'],
-];
+import { LOAN_CATEGORY_GROUPS, LOAN_TYPE_LABELS } from '@/lib/loanCategories';
 
 const EMPTY = {
   lenderName: '', productName: '', loanType: 'home-loan',
@@ -111,7 +102,11 @@ export default function LoanProductModal({ product, onClose, onSaved }) {
               <div>
                 <label className={label}>Loan type</label>
                 <select value={form.loanType} onChange={set('loanType')} className={`${input} cursor-pointer`}>
-                  {LOAN_TYPES.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                  {Object.entries(LOAN_CATEGORY_GROUPS).map(([group, { label: groupLabel, types }]) => (
+                    <optgroup key={group} label={groupLabel}>
+                      {types.map((t) => <option key={t} value={t}>{LOAN_TYPE_LABELS[t]}</option>)}
+                    </optgroup>
+                  ))}
                 </select>
               </div>
               <div>
